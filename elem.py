@@ -111,7 +111,8 @@ class Curator(object):
             if edb_id not in self.curated_exploits[cve_id].keys():
                 self.curated_exploits[cve_id][edb_id] = \
                     dict(filename=exploit_entries[edb_id]['filename'],
-                         confidence='unknown')
+                         confidence='unknown',
+                         notes='empty')
 
     def write(self):
         with open(self.curator_file_name, 'w') as curator_file:
@@ -160,6 +161,7 @@ def list_exploits(args):
                 print cveid + "," + \
                       edbid + "," + \
                       smaller_list[cveid][edbid]['confidence'] + "," + \
+                      smaller_list[cveid][edbid]['notes'] + "," + \
                       smaller_list[cveid][edbid]['filename']
     else:
         print smaller_list
@@ -170,9 +172,9 @@ def update_exploits(args):
 
     pruned_list = {cveid: {edbid: exploit for edbid, exploit in exploit_entries.iteritems() if args.edbid == int(edbid)} for cveid, exploit_entries in curated_exploits.iteritems()}
     smaller_list = {cveid: exploits for cveid, exploits in pruned_list.iteritems() if len(exploits) > 0}
-
     for cveid in smaller_list.keys():
         curator.curated_exploits[cveid][str(args.edbid)]['confidence'] = args.confidence
+        curator.curated_exploits[cveid][str(args.edbid)]['notes'] = args.notes
 
     curator.write()
 
@@ -270,6 +272,9 @@ def main():
                         help='Set the confidence level in the exploit',
                         required=True,
                         choices=set(('unknown', 'none', 'some', 'high', 'all')))
+    update_parser.add_argument('--notes',
+                        help='Add an note',
+                        required=False)
     update_parser.add_argument('--curatorfile',
                         help='Path to curation file',
                         required=False,
