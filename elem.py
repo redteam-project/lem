@@ -4,11 +4,15 @@ from datetime import timedelta, datetime
 import argparse
 import os
 import re
-import requests
 import json
 import dateutil.parser
 import sys
 import subprocess
+
+try:
+    import requests
+except ImportError:
+    pass
 
 class ExploitDatabase(object):
     def __init__(self, edb_path='exploit-database'):
