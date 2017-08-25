@@ -246,7 +246,7 @@ def main():
     list_parser.add_argument('--confidence',
                         help='List exploit values by confidence',
                         required=False,
-                        choices=set(('unknown', 'none', 'some', 'high', 'all')),
+                        choices=set(('unknown', 'none', 'some', 'high', 'all', 'initial')),
                         default='all')
     list_parser.add_argument('--curatorfile',
                         help='Path to curation file',
@@ -271,7 +271,7 @@ def main():
     update_parser.add_argument('--confidence',
                         help='Set the confidence level in the exploit',
                         required=True,
-                        choices=set(('unknown', 'none', 'some', 'high', 'all')))
+                        choices=set(('unknown', 'none', 'some', 'high', 'all', 'initial')))
     update_parser.add_argument('--notes',
                         help='Add an note',
                         required=False)
