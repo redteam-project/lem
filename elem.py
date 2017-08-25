@@ -158,13 +158,17 @@ def list_exploits(args):
         print 'CVE,EDB ID,Confidence,Path to File'
         for cveid in smaller_list.keys():
             for edbid in smaller_list[cveid].keys():
-                print cveid + "," + \
-                      edbid + "," + \
-                      smaller_list[cveid][edbid]['confidence'] + "," + \
-                      smaller_list[cveid][edbid]['notes'] + "," + \
-                      smaller_list[cveid][edbid]['filename']
+                result = cveid + "," + \
+                         edbid + "," + \
+                         smaller_list[cveid][edbid]['confidence'] + "," + \
+                         smaller_list[cveid][edbid]['filename']
+                if smaller_list[cveid][edbid]['notes'] is not None:
+                  result += ","
+                  result += smaller_list[cveid][edbid]['notes']
+                print result
+
     else:
-        print smaller_list
+        print json.dumps(smaller_list)
 
 def update_exploits(args):
     curator = Curator(args.curatorfile)
