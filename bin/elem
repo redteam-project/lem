@@ -19,8 +19,7 @@ def main():
     parser = argparse.ArgumentParser(description='Cross Reference CVE\'s against a Exploit-DB entries for Enterprise Linux.')
 
     subparsers = parser.add_subparsers()
-    refresh_parser = subparsers.add_parser('refresh',
-                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    refresh_parser = subparsers.add_parser('refresh')
     refresh_parser.add_argument('--refresh',
                           required=False,
                           type=str2bool,
@@ -40,8 +39,7 @@ def main():
                           help='Path to curation file',
                           required=False)
 
-    list_parser = subparsers.add_parser('list',
-                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    list_parser = subparsers.add_parser('list')
     list_parser.add_argument('--list',
                           required=False,
                           type=str2bool,
@@ -66,8 +64,7 @@ def main():
                           const=True,
                           default='f')
 
-    update_parser = subparsers.add_parser('update',
-                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    update_parser = subparsers.add_parser('update')
     update_parser.add_argument('--update',
                           required=False,
                           type=str2bool,
@@ -91,8 +88,7 @@ def main():
                           required=True,
                           type=int)
 
-    assess_parser = subparsers.add_parser('assess',
-                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    assess_parser = subparsers.add_parser('assess')
     assess_parser.add_argument('--assess',
                           required=False,
                           type=str2bool,
