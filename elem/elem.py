@@ -22,7 +22,7 @@ class Elem(object):
         elif hasattr(self.args, 'update'):
             self.update_exploits(self.args)
         elif hasattr(self.args, 'assess'):
-            self.assess(args)
+            self.assess(self.args)
 
     def refresh(self, args):
         exploitdb = ExploitDatabase(args.exploitdb)
