@@ -8,6 +8,7 @@ from curator import Curator
 
 import sys
 import subprocess
+import re
 
 class Elem(object):
     def __init__(self, args):
