@@ -119,6 +119,23 @@ class Curator(object):
             self.curated_exploits = json.dump(self.curated_exploits,
                                               curator_file)
 
+    def cves_by_exploit_id(self, edbid_to_find):
+        pruned_list = \
+            {cveid:
+            {edbid: exploit for edbid, exploit in exploit_entries.iteritems()
+                if edbid_to_find == int(edbid)}
+                for cveid, exploit_entries in self.curated_exploits.iteritems()}
+
+        final_list = \
+            {cveid: exploits for cveid, exploits in pruned_list.iteritems()
+            if len(exploits) > 0}
+            
+        if not final_list:
+            print "EDB ID %s not among curated exploits. No action taken" \
+                  % edbid_to_find
+
+        return final_list
+
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
@@ -168,11 +185,9 @@ def list_exploits(args):
 
 def update_exploits(args):
     curator = Curator(args.curatorfile)
-    curated_exploits = curator.curated_exploits
+    curated_exploits = curator.cves_by_exploit_id(args.edbid)
 
-    pruned_list = {cveid: {edbid: exploit for edbid, exploit in exploit_entries.iteritems() if args.edbid == int(edbid)} for cveid, exploit_entries in curated_exploits.iteritems()}
-    smaller_list = {cveid: exploits for cveid, exploits in pruned_list.iteritems() if len(exploits) > 0}
-    for cveid in smaller_list.keys():
+    for cveid in curated_exploits.keys():
         curator.curated_exploits[cveid][str(args.edbid)]['confidence'] = args.confidence
         curator.curated_exploits[cveid][str(args.edbid)]['notes'] = args.notes
 
