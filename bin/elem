@@ -1,0 +1,120 @@
+#!/usr/bin/python
+
+import sys
+import argparse
+
+sys.path.append('..')
+from elem.elem import Elem
+
+def str2bool(v):
+    if v.lower() in ('yes', 'true', 't', 'y', '1'):
+        return True
+    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
+        return False
+    else:
+        raise argparse.ArgumentTypeError('Boolean value expected.')
+
+def main():
+
+    parser = argparse.ArgumentParser(description='Cross Reference CVE\'s against a Exploit-DB entries for Enterprise Linux.')
+
+    subparsers = parser.add_subparsers()
+    refresh_parser = subparsers.add_parser('refresh',
+                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    refresh_parser.add_argument('--refresh',
+                          required=False,
+                          type=str2bool,
+                          nargs='?',
+                          const=True,
+                          default='t',
+                          help=argparse.SUPPRESS)
+    refresh_parser.add_argument('--exploitdb',
+                          help='Exploit DB directory to search',
+                          default='exploit-database',
+                          required=False)
+    refresh_parser.add_argument('--securityapi',
+                          help='Red Hat Security API base URL.',
+                          required=False,
+                          default='https://access.redhat.com/labs/securitydataapi')
+    refresh_parser.add_argument('--curatorfile',
+                          help='Path to curation file',
+                          required=False)
+
+    list_parser = subparsers.add_parser('list',
+                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    list_parser.add_argument('--list',
+                          required=False,
+                          type=str2bool,
+                          nargs='?',
+                          const=True,
+                          default='t',
+                          help=argparse.SUPPRESS)
+
+    list_parser.add_argument('--confidence',
+                          help='List exploit values by confidence',
+                          required=False,
+                          choices=set(('unknown', 'none', 'some', 'high', 'all')),
+                          default='all')
+    list_parser.add_argument('--curatorfile',
+                          help='Path to curation file',
+                          required=False,
+                          default='curator.json')
+    list_parser.add_argument('--csv',
+                          required=False,
+                          type=str2bool,
+                          nargs='?',
+                          const=True,
+                          default='f')
+
+    update_parser = subparsers.add_parser('update',
+                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    update_parser.add_argument('--update',
+                          required=False,
+                          type=str2bool,
+                          nargs='?',
+                          const=True,
+                          default='t',
+                          help=argparse.SUPPRESS)
+    update_parser.add_argument('--confidence',
+                          help='Set the confidence level in the exploit',
+                          required=True,
+                          choices=set(('unknown', 'none', 'some', 'high', 'all')))
+    update_parser.add_argument('--notes',
+                          help='Add an note',
+                          required=False)
+    update_parser.add_argument('--curatorfile',
+                          help='Path to curation file',
+                          required=False,
+                          default='curator.json')
+    update_parser.add_argument('--edbid',
+                          help='Which exploit to update',
+                          required=True,
+                          type=int)
+
+    assess_parser = subparsers.add_parser('assess',
+                          formatter_class=argparse.ArgumentDefaultsHelpFormatter)
+    assess_parser.add_argument('--assess',
+                          required=False,
+                          type=str2bool,
+                          nargs='?',
+                          const=True,
+                          default='t',
+                          help=argparse.SUPPRESS)
+    assess_parser.add_argument('--curatorfile',
+                          help='Path to curation file',
+                          required=False,
+                          default='curator.json')
+    assess_parser.add_argument('--csv',
+                          required=False,
+                          type=str2bool,
+                          nargs='?',
+                          const=True,
+                          default='f')
+
+
+    args = parser.parse_args()
+    mapper = Elem(args)
+    mapper.run()
+
+if __name__ == "__main__":
+    main()
