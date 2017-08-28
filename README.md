@@ -1,4 +1,4 @@
-# PyElem
+# Elem
 Python Enterprise Linux Exploit Mapper
 
 ```terminal
@@ -55,4 +55,14 @@ optional arguments:
   --curatorfile CURATORFILE
                         Path to curation file (default: curator.json)
   --edbid EDBID         Which exploit to update (default: None)
+```
+## Assess an Enterprise Linux Host for CVE's and Mapped Exploits
+```terminal
+usage: elem assess [-h] [--curatorfile CURATORFILE] [--csv [CSV]]
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --curatorfile CURATORFILE
+                        Path to curation file (default: curator.json)
+  --csv [CSV]
 ```
