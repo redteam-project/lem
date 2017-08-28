@@ -23,6 +23,7 @@ class SecurityAPI(object):
                                            microsecond=00) - timedelta(1)
         # If our existing CVE data is older than yesterday, get new data
         if since_date != yesterday:
+            print "Security API data is more than a day old.  Querying for new data."
             self.cvedata = self.get_data('cve.json',
                                          ['per_page=50000',
                                           'after=' + str(since_date)])
