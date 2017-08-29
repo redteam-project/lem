@@ -1,4 +1,5 @@
 from distutils.core import setup
+import setuptools
 setup(name='elem',
       packages=['elem'],
       install_requires=['requests'],
@@ -8,7 +9,7 @@ setup(name='elem',
       author_email='kevensen@redhat.com',
       license='Apache 2.0',
       url='https://github.com/fedoraredteam/elem',
-      download_url='https://github.com/fedoraredteam/elem/archive/master.zip',
+      download_url='https://github.com/fedoraredteam/elem/archive/0.0.1.zip',
       keywords=['cve', 'exploit', 'linux'],
       classifiers=[
             'Development Status :: 3 - Alpha',
@@ -16,4 +17,5 @@ setup(name='elem',
             'Programming Language :: Python :: 2.7',
       ],
       package_data={'elem': ['cves/*', 'curator.json']},
-      scripts=['bin/elem'])
+      scripts=['bin/elem'],
+      platforms=['Linux'])
