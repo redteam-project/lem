@@ -1,4 +1,5 @@
 from distutils.core import setup
+import setuptools
 setup(name='elem',
       packages=['elem'],
       install_requires=['requests'],
@@ -16,4 +17,5 @@ setup(name='elem',
             'Programming Language :: Python :: 2.7',
       ],
       package_data={'elem': ['cves/*', 'curator.json']},
-      scripts=['bin/elem'])
+      scripts=['bin/elem'],
+      platforms=['Linux'])
