@@ -9,7 +9,7 @@ setup(name='elem',
       author_email='kevensen@redhat.com',
       license='Apache 2.0',
       url='https://github.com/fedoraredteam/elem',
-      download_url='https://github.com/fedoraredteam/elem/archive/master.zip',
+      download_url='https://github.com/fedoraredteam/elem/archive/0.0.1.zip',
       keywords=['cve', 'exploit', 'linux'],
       classifiers=[
             'Development Status :: 3 - Alpha',
