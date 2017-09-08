@@ -2,7 +2,7 @@ from distutils.core import setup
 import setuptools
 setup(name='elem',
       packages=['elem'],
-      install_requires=['requests'],
+      install_requires=['requests', 'GitPython'],
       version='0.0.1',
       description='Tool to correlate published CVE\'s against Enterprise Linux against known exploits.',
       author='Kenneth Evensen',

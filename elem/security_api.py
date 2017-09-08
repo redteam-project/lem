@@ -12,26 +12,36 @@ class SecurityAPI(object):
         self.baseurl = baseurl
         self.cve_path = cve_path
         self.cve_list = []
+        self.new_cves = False
         if not os.path.isdir(self.cve_path):
             os.mkdir(self.cve_path)
 
         self.load_cves()
         since_date = self.get_recent_cve_date()
-        yesterday = datetime.now().replace(hour=00,
-                                           minute=00,
-                                           second=00,
-                                           microsecond=00) - timedelta(1)
-        # If our existing CVE data is older than yesterday, get new data
-        if since_date != yesterday:
-            print "Security API data is more than a day old.  Querying for new data."
+        most_recent_cve_from_api = self.get_data('cve.json', ['per_page=1'])
+        latest_cve_date = \
+            dateutil.parser.parse(most_recent_cve_from_api[0]['public_date'])
+
+        latest_cve_date = latest_cve_date.replace(tzinfo=None)
+
+
+
+        # If our existing CVE data is older than the latest CVE available
+        # then retrieve new data.
+        if since_date < latest_cve_date:
             self.cvedata = self.get_data('cve.json',
                                          ['per_page=50000',
                                           'after=' + str(since_date)])
+            print "Adding %d new CVE's." % len(self.cvedata)
+            self.new_cves = True
 
             for cve in self.cvedata:
                 cve = self.get_data('cve/' + cve['CVE'] + '.json')
                 self.write_cve(cve)
                 self.cve_list.append(cve)
+        else:
+            print "CVE data is up to date."
+
 
     def get_data(self, query_type, params=[]):
         url = self.baseurl + '/' + query_type

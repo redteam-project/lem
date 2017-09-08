@@ -29,7 +29,6 @@ def main():
                           help=argparse.SUPPRESS)
     refresh_parser.add_argument('--exploitdb',
                           help='Exploit DB directory to search',
-                          default='exploit-database',
                           required=False)
     refresh_parser.add_argument('--securityapi',
                           help='Red Hat Security API base URL.',
@@ -63,6 +62,13 @@ def main():
                           nargs='?',
                           const=True,
                           default='f')
+    list_parser.add_argument('--version',
+                          required=False,
+                          type=str)
+    list_parser.add_argument('--edbid',
+                          help="The edbid on which to filter.",
+                          required=False,
+                          type=int)
 
     update_parser = subparsers.add_parser('update')
     update_parser.add_argument('--update',
@@ -87,6 +93,9 @@ def main():
                           help='Which exploit to update',
                           required=True,
                           type=int)
+    update_parser.add_argument('--version',
+                          required=True,
+                          type=str)
 
     assess_parser = subparsers.add_parser('assess')
     assess_parser.add_argument('--assess',
