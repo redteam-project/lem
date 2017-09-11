@@ -63,8 +63,9 @@ class Elem(object):
                 cve.write()
 
     def assess(self, args):
-        cves = []
+        assessed_cves = []
         lines = []
+        securityapi = SecurityAPI()
         try:
             try:
                 lines = subprocess.check_output(["yum","updateinfo","list","cves"]).split('\n')
@@ -78,27 +79,10 @@ class Elem(object):
         pattern = re.compile('\s(.*CVE-\d{4}-\d{4,})' )
         for line in lines:
             result = re.findall(pattern, line)
-            if result and result[0] not in cves:
-                cves.append(result[0])
+            if result and result[0] not in assessed_cves:
+                assessed_cves.append(result[0])
 
-
-        curator = Curator()
-        curated_exploits = curator.curated_exploits
-        if args.csv:
-            print 'CVE,EDB ID,Confidence,Version,Path to File'
-        for cveid in cves:
-            try:
-                if args.csv:
-                    for edbid in curated_exploits[cveid].keys():
-                        for confidence in curated_exploits[cveid][edbid]['confidence'].keys():
-                            for version in curated_exploits[cveid][edbid]['confidence'][confidence]:
-                                print cveid + "," + \
-                                      edbid + "," + \
-                                      confidence + "," + \
-                                      version + "," + \
-                                      curated_exploits[cveid][edbid]['notes'] + "," + \
-                                      curated_exploits[cveid][edbid]['filename']
-                else:
-                    print curator.curated_exploits[cveid]
-            except KeyError:
-                pass
+        potential_exploits = securityapi.exploits_dict()
+        for cve_id in assessed_cves:
+            if cve_id in potential_exploits.keys():
+                print potential_exploits[cve_id]

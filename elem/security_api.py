@@ -59,3 +59,9 @@ class SecurityAPI(object):
             new_cve = CVE(cve_id, self.cve_path, cve_file_name)
             new_cve.read()
             self.cve_list.append(new_cve)
+
+    def exploits_dict(self, edbid_to_find=None):
+        result = {}
+        for cve in self.cve_list:
+            result.update(cve.exploits_dict(edbid_to_find))
+        return result
