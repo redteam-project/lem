@@ -76,33 +76,27 @@ def main():
     score_parser.add_argument('--spoof',
                           required=False,
                           help='Spoofing Score',
-                          type=int,
-                          default=None)
+                          type=int)
     score_parser.add_argument('--tampering',
                           required=False,
                           help='Tampering Score',
-                          type=int,
-                          default=None)
+                          type=int)
     score_parser.add_argument('--repudiation',
                           required=False,
                           help='Repudiation Score',
-                          type=int,
-                          default=None)
+                          type=int)
     score_parser.add_argument('--infodisclosure',
                           required=False,
                           help='Information Disclosure Score',
-                          type=int,
-                          default=None)
+                          type=int)
     score_parser.add_argument('--dos',
                           required=False,
                           help='Denial of Service Score',
-                          type=int,
-                          default=None)
+                          type=int)
     score_parser.add_argument('--escallation',
                           required=False,
                           help='Escallation of Privilege Score',
-                          type=int,
-                          default=None)
+                          type=int)
 
     assess_parser = subparsers.add_parser('assess')
     assess_parser.add_argument('--assess',
@@ -122,7 +116,6 @@ def main():
                           nargs='?',
                           const=True,
                           default='f')
-
 
     args = parser.parse_args()
     mapper = Elem(args)

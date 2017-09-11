@@ -48,14 +48,14 @@ class CVE(object):
 
         return result
 
-    def score_exploit(self, edbid_to_find, version, s=None, t=None, r=None, i=None, d=None, e=None):
+    def score_exploit(self, edbid_to_find, version, s, t, r, i, d, e):
         if version not in self.exploits[str(edbid_to_find)].keys():
-            self.exploits[str(edbid_to_find)][version] = dict(s=0,
-                                                              t=0,
-                                                              r=0,
-                                                              i=0,
-                                                              d=0,
-                                                              e=0)
+            self.exploits[str(edbid_to_find)][version] = dict(s=-1,
+                                                              t=-1,
+                                                              r=-1,
+                                                              i=-1,
+                                                              d=-1,
+                                                              e=-1)
         if s:
             self.exploits[str(edbid_to_find)][version]['s'] = s
         if t:
