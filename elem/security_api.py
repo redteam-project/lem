@@ -4,43 +4,30 @@ import os
 import dateutil.parser
 import requests
 import json
+from cve import CVE
 
 class SecurityAPI(object):
     def __init__(self,
-                 baseurl,
                  cve_path=os.path.dirname(os.path.realpath(__file__))+"/cves"):
-        self.baseurl = baseurl
+
         self.cve_path = cve_path
         self.cve_list = []
         self.new_cves = False
         if not os.path.isdir(self.cve_path):
             os.mkdir(self.cve_path)
-
         self.load_cves()
-        since_date = self.get_recent_cve_date()
-        most_recent_cve_from_api = self.get_data('cve.json', ['per_page=1'])
-        latest_cve_date = \
-            dateutil.parser.parse(most_recent_cve_from_api[0]['public_date'])
 
-        latest_cve_date = latest_cve_date.replace(tzinfo=None)
-
-
-
-        # If our existing CVE data is older than the latest CVE available
-        # then retrieve new data.
-        if since_date < latest_cve_date:
-            self.cvedata = self.get_data('cve.json',
-                                         ['per_page=50000',
-                                          'after=' + str(since_date)])
-            print "Adding %d new CVE's." % len(self.cvedata)
-            self.new_cves = True
-
-            for cve in self.cvedata:
-                cve = self.get_data('cve/' + cve['CVE'] + '.json')
-                self.write_cve(cve)
-                self.cve_list.append(cve)
-        else:
-            print "CVE data is up to date."
+    def refresh(self,
+                 baseurl):
+        print "Updating CVE's from API."
+        self.baseurl = baseurl
+        cves_from_api = self.get_data('cve.json',['per_page=20000'])
+        for cve in cves_from_api:
+            cve_file_path = self.cve_path + "/" + cve['CVE'] + '.json'
+            if not os.path.isfile(cve_file_path):
+                new_cve = CVE(cve['CVE'], self.cve_path)
+                self.cve_list.append(new_cve)
+        print "Finished updating CVE's from API."
 
 
     def get_data(self, query_type, params=[]):
@@ -64,23 +51,11 @@ class SecurityAPI(object):
 
         return r.json()
 
-    def write_cve(self, cve_json):
-
-        cve_file_name = self.cve_path + '/' + cve_json['name'] + '.json'
-        with open(cve_file_name, 'w') as cve_file:
-            json.dump(cve_json, cve_file)
-
     def load_cves(self):
 
-        cve_file_name_list = [f for f in os.listdir(self.cve_path) if os.path.isfile(os.path.join(self.cve_path, f))]
-        for cve_file_name in cve_file_name_list:
-            with open(self.cve_path + '/' + cve_file_name, 'r') as cve_file:
-                self.cve_list.append(json.load(cve_file))
-
-    def get_recent_cve_date(self):
-        recent_date = dateutil.parser.parse('2010-11-10T00:00:00')
-        for cve in self.cve_list:
-            new_date = dateutil.parser.parse(cve['public_date'])
-            if new_date > recent_date:
-                recent_date = new_date
-        return recent_date
+        self.cve_file_name_list = [f for f in os.listdir(self.cve_path) if os.path.isfile(os.path.join(self.cve_path, f)) and os.path.join(self.cve_path, f).endswith(".json")]
+        for cve_file_name in self.cve_file_name_list:
+            cve_id = cve_file_name.replace(".json", "")
+            new_cve = CVE(cve_id, self.cve_path, cve_file_name)
+            new_cve.read()
+            self.cve_list.append(new_cve)

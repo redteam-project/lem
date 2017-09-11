@@ -6,6 +6,8 @@ import argparse
 sys.path.append('..')
 from elem.elem import Elem
 
+sys.dont_write_bytecode = True
+
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
         return True
@@ -34,9 +36,14 @@ def main():
                           help='Red Hat Security API base URL.',
                           required=False,
                           default='https://access.redhat.com/labs/securitydataapi')
-    refresh_parser.add_argument('--curatorfile',
-                          help='Path to curation file',
-                          required=False)
+    refresh_parser.add_argument('--api',
+                          required=False,
+                          type=str2bool,
+                          nargs='?',
+                          const=True,
+                          default='f',
+                          help="Query the Red Hat Security API for new CVE's")
+
 
     list_parser = subparsers.add_parser('list')
     list_parser.add_argument('--list',
@@ -46,56 +53,56 @@ def main():
                           const=True,
                           default='t',
                           help=argparse.SUPPRESS)
-
-    list_parser.add_argument('--confidence',
-                          help='List exploit values by confidence',
-                          required=False,
-                          choices=set(('unknown', 'none', 'some', 'high', 'all')),
-                          default='all')
-    list_parser.add_argument('--curatorfile',
-                          help='Path to curation file',
-                          required=False,
-                          default='curator.json')
-    list_parser.add_argument('--csv',
-                          required=False,
-                          type=str2bool,
-                          nargs='?',
-                          const=True,
-                          default='f')
-    list_parser.add_argument('--version',
-                          required=False,
-                          type=str)
     list_parser.add_argument('--edbid',
                           help="The edbid on which to filter.",
                           required=False,
                           type=int)
 
-    update_parser = subparsers.add_parser('update')
-    update_parser.add_argument('--update',
+    score_parser = subparsers.add_parser('score')
+    score_parser.add_argument('--score',
                           required=False,
                           type=str2bool,
                           nargs='?',
                           const=True,
                           default='t',
                           help=argparse.SUPPRESS)
-    update_parser.add_argument('--confidence',
-                          help='Set the confidence level in the exploit',
-                          required=True,
-                          choices=set(('unknown', 'none', 'some', 'high', 'all')))
-    update_parser.add_argument('--notes',
-                          help='Add an note',
-                          required=False)
-    update_parser.add_argument('--curatorfile',
-                          help='Path to curation file',
-                          required=False,
-                          default='curator.json')
-    update_parser.add_argument('--edbid',
-                          help='Which exploit to update',
+    score_parser.add_argument('--edbid',
+                          help='Which exploit to score',
                           required=True,
                           type=int)
-    update_parser.add_argument('--version',
+    score_parser.add_argument('--version',
                           required=True,
                           type=str)
+    score_parser.add_argument('--spoof',
+                          required=False,
+                          help='Spoofing Score',
+                          type=int,
+                          default=None)
+    score_parser.add_argument('--tampering',
+                          required=False,
+                          help='Tampering Score',
+                          type=int,
+                          default=None)
+    score_parser.add_argument('--repudiation',
+                          required=False,
+                          help='Repudiation Score',
+                          type=int,
+                          default=None)
+    score_parser.add_argument('--infodisclosure',
+                          required=False,
+                          help='Information Disclosure Score',
+                          type=int,
+                          default=None)
+    score_parser.add_argument('--dos',
+                          required=False,
+                          help='Denial of Service Score',
+                          type=int,
+                          default=None)
+    score_parser.add_argument('--escallation',
+                          required=False,
+                          help='Escallation of Privilege Score',
+                          type=int,
+                          default=None)
 
     assess_parser = subparsers.add_parser('assess')
     assess_parser.add_argument('--assess',
