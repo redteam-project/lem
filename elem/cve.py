@@ -37,16 +37,12 @@ class CVE(object):
             return True
         return False
 
-    def exploits_dict(self, edbid_to_find=None):
+    def __iter__(self):
+
         result = {}
-
-        if edbid_to_find:
-            result[self.id] = dict((edbid, exploit) for edbid, exploit in self.exploits.iteritems() if int(edbid) == int(edbid_to_find))
-        else:
-            result[self.id] = dict((edbid, exploit)
-                            for edbid, exploit in self.exploits.iteritems())
-
-        return result
+        result[self.id] = dict((edbid, exploit)
+                        for edbid, exploit in self.exploits.iteritems())
+        return result.iteritems()
 
     def score_exploit(self, edbid_to_find, version, s=-1, t=-1, r=-1, i=-1, d=-1, e=-1):
         if version not in self.exploits[str(edbid_to_find)].keys():

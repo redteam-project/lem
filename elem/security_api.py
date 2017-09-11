@@ -63,5 +63,5 @@ class SecurityAPI(object):
     def exploits_dict(self, edbid_to_find=None):
         result = {}
         for cve in self.cve_list:
-            result.update(cve.exploits_dict(edbid_to_find))
+            result.update(dict(cve))
         return result

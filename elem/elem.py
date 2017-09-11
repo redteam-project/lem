@@ -29,7 +29,7 @@ class Elem(object):
                                self.args.dos,
                                self.args.escallation)
         elif hasattr(self.args, 'assess'):
-            self.assess(self.args)
+            self.assess(self.args.csv)
 
     def refresh(self, security_api_url, query_api=False):
         exploitdb = ExploitDatabase()
@@ -51,8 +51,7 @@ class Elem(object):
         securityapi = SecurityAPI()
         cve_list = securityapi.cve_list
         for cve in cve_list:
-            if (edbid and cve.affected_by_exploit(edbid)) or not edbid:
-                print cve.exploits_dict(edbid)
+            print dict(cve)
 
     def score_exploit(self, edbid, version, s, t, r, i, d, e):
         securityapi = SecurityAPI()
@@ -62,7 +61,7 @@ class Elem(object):
                 cve.score_exploit(edbid, version, s, t, r, i, d, e)
                 cve.write()
 
-    def assess(self, args):
+    def assess(self, csv=False):
         assessed_cves = []
         lines = []
         securityapi = SecurityAPI()
@@ -85,4 +84,5 @@ class Elem(object):
         potential_exploits = securityapi.exploits_dict()
         for cve_id in assessed_cves:
             if cve_id in potential_exploits.keys():
-                print potential_exploits[cve_id]
+                if not csv:
+                    print cve_id, dict(potential_exploits[cve_id])
