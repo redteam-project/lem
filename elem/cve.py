@@ -18,7 +18,7 @@ class CVE(object):
     def add_exploit(self, edbid, filename=''):
         if edbid not in self.exploits.keys():
             print "Adding exploit %s to cve %s" % (edbid, self.id)
-            self.exploits[edbid] = dict(filename=filename)
+            self.exploits[edbid] = dict(filename=filename, scores=dict())
 
     def read(self):
         file_name = self.cve_path + '/' + self.cve_file_name
@@ -44,23 +44,26 @@ class CVE(object):
                         for edbid, exploit in self.exploits.iteritems())
         return result.iteritems()
 
-    def score_exploit(self, edbid_to_find, version, s=-1, t=-1, r=-1, i=-1, d=-1, e=-1):
-        if version not in self.exploits[str(edbid_to_find)].keys():
-            self.exploits[str(edbid_to_find)][version] = dict(s=-1,
-                                                              t=-1,
-                                                              r=-1,
-                                                              i=-1,
-                                                              d=-1,
-                                                              e=-1)
-        if (s > -1) and (s <= 9):
-            self.exploits[str(edbid_to_find)][version]['s'] = s
-        if (t > -1) and (t <= 9):
-            self.exploits[str(edbid_to_find)][version]['t'] = t
-        if (r > -1) and (r <= 9):
-            self.exploits[str(edbid_to_find)][version]['r'] = r
-        if (i > -1) and (i <= 9):
-            self.exploits[str(edbid_to_find)][version]['i'] = i
-        if (d > -1) and (d <= 9):
-            self.exploits[str(edbid_to_find)][version]['d'] = d
-        if (e > -1) and (e <= 9):
-            self.exploits[str(edbid_to_find)][version]['e'] = e
+    def score_exploit(self, edbid_to_find, version, kind, score):
+        if 'scores' not in self.exploits[str(edbid_to_find)].keys():
+            self.exploits[str(edbid_to_find)]['scores'] = dict()
+
+        if version not in self.exploits[str(edbid_to_find)]['scores'].keys():
+            self.exploits[str(edbid_to_find)]['scores'][version] = dict()
+
+        if kind not in self.exploits[str(edbid_to_find)]['scores'][version].keys():
+            self.exploits[str(edbid_to_find)]['scores'][version][kind] = dict()
+
+        self.exploits[str(edbid_to_find)]['scores'][version][kind] = score
+
+    def __str__(self):
+        string = ""
+        for edbid in self.exploits.keys():
+            string += self.id
+            string += ','
+            string += edbid
+            string += ','
+            string += self.exploits[edbid]['filename']
+            string += '\n'
+
+        return string[:len(string)-1]

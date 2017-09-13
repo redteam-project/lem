@@ -4,31 +4,21 @@ import os
 import dateutil.parser
 import requests
 import json
-from cve import CVE
+import logging
+
 
 class SecurityAPI(object):
-    def __init__(self,
-                 cve_path=os.path.dirname(os.path.realpath(__file__))+"/cves"):
-
-        self.cve_path = cve_path
-        self.cve_list = []
-        self.new_cves = False
-        if not os.path.isdir(self.cve_path):
-            os.mkdir(self.cve_path)
-        self.load_cves()
-
-    def refresh(self,
-                 baseurl):
-        print "Updating CVE's from API."
+    def __init__(self, baseurl):
         self.baseurl = baseurl
+        self.cve_list = []
+        self.logger = logging.getLogger('elem')
+
+    def refresh(self):
+        self.logger.info("Updating CVE's from API.")
         cves_from_api = self.get_data('cve.json',['per_page=20000'])
         for cve in cves_from_api:
-            cve_file_path = self.cve_path + "/" + cve['CVE'] + '.json'
-            if not os.path.isfile(cve_file_path):
-                new_cve = CVE(cve['CVE'], self.cve_path)
-                self.cve_list.append(new_cve)
-        print "Finished updating CVE's from API."
-
+            self.cve_list.append(cve['CVE'])
+        self.logger.info("Finished updating CVE's from API.")
 
     def get_data(self, query_type, params=[]):
         url = self.baseurl + '/' + query_type
@@ -40,13 +30,12 @@ class SecurityAPI(object):
         r = requests.get(url)
 
         if r.status_code != 200:
-            print('ERROR: Invalid request; returned {} for the following '
+            self.logger.error('ERROR: Invalid request; returned {} for the following '
                   'query:\n{}'.format(r.status_code, url))
             sys.exit(1)
 
         if not r.json():
-            print('No data returned with the following query:')
-            print(url)
+            self.logger.warn('No data returned with the following query: %s' % url)
             sys.exit(0)
 
         return r.json()
@@ -63,5 +52,5 @@ class SecurityAPI(object):
     def exploits_dict(self, edbid_to_find=None):
         result = {}
         for cve in self.cve_list:
-            result.update(dict(cve))
+            result[cve.id] = cve
         return result
