@@ -1,68 +1,66 @@
 # Elem
 Python Enterprise Linux Exploit Mapper
-
+## Getting Started
+There are a couple of ways to get started.  Clone the Repository or PIP.
+### Clone the Repository
+```
+git clone https://github.com/fedoraredteam/elem
+git submodule update --recursive
+```
+### Python PIP
+```
+pip install elem
+```
+## Help
+### General
 ```terminal
-
-usage: elem.py [-h] {refresh,list,update} ...
+usage: elem [-h] [--exploitdb EXPLOITDB] [--exploits EXPLOITS]
+            {refresh,list,score,assess} ...
 
 Cross Reference CVE's against a Exploit-DB entries for Enterprise Linux.
 
 positional arguments:
-  {refresh,list,update}
-
-optional arguments:
-  -h, --help            show this help message and exit
-```
-## Refresh Local Information
-```terminal
-usage: elem.py refresh [-h] [--exploitdb EXPLOITDB]
-                       [--securityapi SECURITYAPI] [--curatorfile CURATORFILE]
+  {refresh,list,score,assess}
 
 optional arguments:
   -h, --help            show this help message and exit
   --exploitdb EXPLOITDB
-                        Exploit DB directory to search (default: exploit-
-                        database)
+                        Exploit DB directory to search
+  --exploits EXPLOITS   Directory to store exploit data
+```
+### Refresh Local Information
+```terminal
+usage: elem refresh [-h] [--securityapi SECURITYAPI]
+
+optional arguments:
+  -h, --help            show this help message and exit
   --securityapi SECURITYAPI
-                        Red Hat Security API base URL. (default:
-                        https://access.redhat.com/labs/securitydataapi)
-  --curatorfile CURATORFILE
-                        Path to curation file (default: curator.json)
+                        Red Hat Security API base URL.
 ```
-## List Curated Exploits
+### List Curated Exploits
 ```terminal
-usage: elem.py list [-h] [--confidence {high,unknown,none,some,all}]
-                    [--curatorfile CURATORFILE] [--csv [CSV]]
+usage: elem list [-h] [--edbid EDBID]
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --confidence {high,unknown,none,some,all}
-                        List exploit values by confidence (default: all)
-  --curatorfile CURATORFILE
-                        Path to curation file (default: curator.json)
-  --csv [CSV]
+  -h, --help     show this help message and exit
+  --edbid EDBID  The edbid on which to filter.
 ```
-## Update the Confidence Level of an Exploit
+### Score an Exploit
 ```terminal
-usage: elem.py update [-h] --confidence {high,unknown,none,some,all}
-                      [--curatorfile CURATORFILE] --edbid EDBID
+usage: elem score [-h] --edbid EDBID --version VERSION [--kind {stride}]
+                  --value VALUE
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --confidence {high,unknown,none,some,all}
-                        Set the confidence level in the exploit (default:
-                        None)
-  --curatorfile CURATORFILE
-                        Path to curation file (default: curator.json)
-  --edbid EDBID         Which exploit to update (default: None)
+  -h, --help         show this help message and exit
+  --edbid EDBID      Which exploit to score
+  --version VERSION
+  --kind {stride}    Threat Score Kind
+  --value VALUE      Threat Score
 ```
-## Assess an Enterprise Linux Host for CVE's and Mapped Exploits
+### Assess an Enterprise Linux Host for CVE's and Mapped Exploits
 ```terminal
-usage: elem assess [-h] [--curatorfile CURATORFILE] [--csv [CSV]]
+usage: elem assess [-h]
 
 optional arguments:
-  -h, --help            show this help message and exit
-  --curatorfile CURATORFILE
-                        Path to curation file (default: curator.json)
-  --csv [CSV]
+  -h, --help  show this help message and exit
 ```
