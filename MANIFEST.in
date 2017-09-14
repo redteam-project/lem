@@ -1,2 +1,2 @@
-include README.rst
-include cves/*
+include README.md
+include exploits/*

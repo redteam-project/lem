@@ -1,103 +1,103 @@
 #!/usr/bin/python
 
-
 from exploit_database import ExploitDatabase
 from security_api import SecurityAPI
-from curator import Curator
-
 
 import sys
 import subprocess
 import re
+import log
+
 
 class Elem(object):
     def __init__(self, args):
         self.args = args
+        self.logger = log.setup_custom_logger('elem')
+        self.console_logger = log.setup_console_logger('console')
+        self.exploitdb = ExploitDatabase(self.args.exploitdb,
+                                         self.args.exploits)
 
     def run(self):
 
         if hasattr(self.args, 'refresh'):
-            self.refresh(self.args)
+            self.refresh(self.args.securityapi)
         elif hasattr(self.args, 'list'):
-            self.list_exploits(self.args)
-        elif hasattr(self.args, 'update'):
-            self.update_exploits(self.args)
+            self.list_exploits(self.args.edbid)
+        elif hasattr(self.args, 'score'):
+            self.score_exploit(self.args.edbid,
+                               self.args.version,
+                               self.args.kind,
+                               self.args.value)
         elif hasattr(self.args, 'assess'):
-            self.assess(self.args)
+            self.assess()
 
-    def refresh(self, args):
-        exploitdb = ExploitDatabase(args.exploitdb)
-        exploits = exploitdb.get_exploits_with_cves()
+    def refresh(self,
+                security_api_url):
 
-        securityapi = SecurityAPI(args.securityapi)
-        cve_list = securityapi.cve_list
+        self.exploitdb.refresh_exploits_with_cves()
 
-        curator = Curator()
+        securityapi = SecurityAPI(security_api_url)
+        securityapi.refresh()
 
-        for cve in cve_list:
-            sub_dict = { k: v for (k, v) in exploits.iteritems() if cve['name'] in exploits[k]['cves']}
-            if len(sub_dict) > 0:
-                curator.add_exploit(cve['name'], sub_dict)
+        for cve in securityapi.cve_list:
+            for edbid in self.exploitdb.exploits.keys():
+                if cve in self.exploitdb.exploits[edbid]['cves'].keys():
+                    self.exploitdb.exploits[edbid]['cves'][cve]['rhapi'] = True
+                    self.exploitdb.write(edbid)
 
-        curator.write()
+    def list_exploits(self,
+                      edbid_to_find=None):
+        results = []
 
-    def list_exploits(self, args):
-        curator = Curator()
-        curated_exploits = curator.curated_exploits
-        pruned_list = {}
+        if not edbid_to_find:
+            for edbid in self.exploitdb.exploits.keys():
+                if self.exploitdb.affects_el(edbid):
+                    results += self.exploitdb.get_exploit_strings(edbid)
 
-        if 'all' not in args.confidence:
-            pruned_list = {cveid: {edbid: exploit for edbid, exploit in exploit_entries.iteritems() if args.confidence in exploit['confidence']} for cveid, exploit_entries in curated_exploits.iteritems()}
-        else:
-            pruned_list = curated_exploits
+        elif self.exploitdb.affects_el(edbid_to_find):
+            results += self.exploitdb.get_exploit_strings(edbid_to_find)
 
-        smaller_list = {cveid: exploits for cveid, exploits in pruned_list.iteritems() if len(exploits) > 0}
-        if args.csv:
-            print 'CVE,EDB ID,Confidence,Path to File'
-            for cveid in smaller_list.keys():
-                for edbid in smaller_list[cveid].keys():
-                    print cveid + "," + \
-                          edbid + "," + \
-                          smaller_list[cveid][edbid]['confidence'] + "," + \
-                          smaller_list[cveid][edbid]['notes'] + "," + \
-                          smaller_list[cveid][edbid]['filename']
-        else:
-            print smaller_list
+        elif not self.exploitdb.affects_el(edbid_to_find):
+            self.console_logger.warn("Exploit ID %s does not appear "
+                                     "to affect enterprise Linux." %
+                                     edbid_to_find)
+            sys.exit(0)
 
-    def update_exploits(self, args):
-        curator = Curator()
-        curated_exploits = curator.cves_by_exploit_id(args.edbid)
+        for line in results:
+            self.console_logger.info(line)
 
-        for cveid in curated_exploits.keys():
-            curator.curated_exploits[cveid][str(args.edbid)]['confidence'] = args.confidence
-            curator.curated_exploits[cveid][str(args.edbid)]['notes'] = args.notes
+    def score_exploit(self,
+                      edbid,
+                      version,
+                      score_kind,
+                      score):
+        self.exploitdb.score(edbid, version, score_kind, score)
+        self.exploitdb.write(edbid)
 
-        curator.write()
-
-    def assess(self, args):
-        cves = []
+    def assess(self):
+        assessed_cves = []
+        lines = []
         try:
-            lines = subprocess.check_output(["yum","updateinfo","list","cves"]).split('\n')
+            command = ["yum", "updateinfo", "list", "cves"]
+            try:
+                lines = subprocess.check_output(command).split('\n')
+            except AttributeError:
+                p = subprocess.Popen(command, stdout=subprocess.PIPE)
+                out, err = p.communicate()
+                lines = out.split('\n')
         except OSError:
-            print "\'assess\' may only be run on an Enterprise Linux host."
+            self.logger.error("\'assess\' may only be "
+                              "run on an Enterprise Linux host.")
             sys.exit(1)
-        pattern = re.compile('\s(.*CVE-\d{4}-\d{4,})' )
+        pattern = re.compile('\s(.*CVE-\d{4}-\d{4,})')
         for line in lines:
             result = re.findall(pattern, line)
-            if result and result[0] not in cves:
-                cves.append(result[0])
+            if result and result[0] not in assessed_cves:
+                assessed_cves.append(result[0])
 
-
-        curator = Curator()
-        for cveid in cves:
-            try:
-                if args.csv:
-                    for edbid in curator.curated_exploits[cveid].keys():
-                        print cveid + "," + \
-                              edbid + "," + \
-                              curator.curated_exploits[cveid][edbid]['confidence'] + "," + \
-                              curator.curated_exploits[cveid][edbid]['filename']
-                else:
-                    print curator.curated_exploits[cveid]
-            except KeyError:
-                pass
+        for cveid in assessed_cves:
+            edbids = self.exploitdb.exploits_by_cve(cveid)
+            for edbid in edbids:
+                strings = self.exploitdb.get_exploit_strings(edbid)
+                for string in strings:
+                    self.console_logger.info(string)
