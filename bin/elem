@@ -2,11 +2,12 @@
 
 import sys
 import argparse
-
-sys.path.append('..')
+sys.path.append("../")
 from elem.elem import Elem
 
 sys.dont_write_bytecode = True
+red_hat_security_api = 'https://access.redhat.com/labs/securitydataapi'
+
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -16,95 +17,84 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
+
 def main():
 
-    parser = argparse.ArgumentParser(description='Cross Reference CVE\'s against a Exploit-DB entries for Enterprise Linux.')
+    parser = argparse.ArgumentParser(description='Cross Reference CVE\'s ' +
+                                     'against a Exploit-DB entries for ' +
+                                     'Enterprise Linux.')
+
+    parser.add_argument('--exploitdb',
+                        help='Exploit DB directory to search',
+                        default='../exploit-database',
+                        required=False)
+    parser.add_argument('--exploits',
+                        help='Directory to store exploit data',
+                        default='../exploits',
+                        required=False)
 
     subparsers = parser.add_subparsers()
     refresh_parser = subparsers.add_parser('refresh')
     refresh_parser.add_argument('--refresh',
-                          required=False,
-                          type=str2bool,
-                          nargs='?',
-                          const=True,
-                          default='t',
-                          help=argparse.SUPPRESS)
-    refresh_parser.add_argument('--exploitdb',
-                          help='Exploit DB directory to search',
-                          default='../exploit-database',
-                          required=False)
-    refresh_parser.add_argument('--exploits',
-                          help='Directory to store exploit data',
-                          default='../exploits',
-                          required=False)
-    refresh_parser.add_argument('--securityapi',
-                          help='Red Hat Security API base URL.',
-                          required=False,
-                          default='https://access.redhat.com/labs/securitydataapi')
+                                required=False,
+                                type=str2bool,
+                                nargs='?',
+                                const=True,
+                                default='t',
+                                help=argparse.SUPPRESS)
 
+    refresh_parser.add_argument('--securityapi',
+                                help='Red Hat Security API base URL.',
+                                required=False,
+                                default=red_hat_security_api)
 
     list_parser = subparsers.add_parser('list')
     list_parser.add_argument('--list',
-                          required=False,
-                          type=str2bool,
-                          nargs='?',
-                          const=True,
-                          default='t',
-                          help=argparse.SUPPRESS)
+                             required=False,
+                             type=str2bool,
+                             nargs='?',
+                             const=True,
+                             default='t',
+                             help=argparse.SUPPRESS)
     list_parser.add_argument('--edbid',
-                          help="The edbid on which to filter.",
-                          required=False,
-                          type=int)
-    list_parser.add_argument('--exploitdb',
-                          help='Exploit DB directory to search',
-                          default='../exploit-database',
-                          required=False)
-    list_parser.add_argument('--exploits',
-                          help='Directory to store exploit data',
-                          default='../exploits',
-                          required=False)
+                             help="The edbid on which to filter.",
+                             required=False,
+                             type=str)
 
     score_parser = subparsers.add_parser('score')
     score_parser.add_argument('--score',
-                          required=False,
-                          type=str2bool,
-                          nargs='?',
-                          const=True,
-                          default='t',
-                          help=argparse.SUPPRESS)
+                              required=False,
+                              type=str2bool,
+                              nargs='?',
+                              const=True,
+                              default='t',
+                              help=argparse.SUPPRESS)
     score_parser.add_argument('--edbid',
-                          help='Which exploit to score',
-                          required=True,
-                          type=int)
+                              help='Which exploit to score',
+                              required=True,
+                              type=str)
     score_parser.add_argument('--version',
-                          required=True,
-                          type=str)
+                              required=True,
+                              type=str)
     score_parser.add_argument('--kind',
-                          required=False,
-                          default='stride',
-                          choices=['stride'],
-                          help='Threat Score Kind',
-                          type=str)
+                              required=False,
+                              default='stride',
+                              choices=['stride'],
+                              help='Threat Score Kind',
+                              type=str)
     score_parser.add_argument('--value',
-                          required=True,
-                          help='Threat Score',
-                          type=str)
-
+                              required=True,
+                              help='Threat Score',
+                              type=str)
 
     assess_parser = subparsers.add_parser('assess')
     assess_parser.add_argument('--assess',
-                          required=False,
-                          type=str2bool,
-                          nargs='?',
-                          const=True,
-                          default='t',
-                          help=argparse.SUPPRESS)
-    assess_parser.add_argument('--csv',
-                          required=False,
-                          type=str2bool,
-                          nargs='?',
-                          const=True,
-                          default='f')
+                               required=False,
+                               type=str2bool,
+                               nargs='?',
+                               const=True,
+                               default='t',
+                               help=argparse.SUPPRESS)
 
     args = parser.parse_args()
     mapper = Elem(args)
