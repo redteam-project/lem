@@ -60,6 +60,10 @@ def main():
                              help="The edbid on which to filter.",
                              required=False,
                              type=str)
+    list_parser.add_argument('--cveid',
+                             help="The CVE ID on which to filter.",
+                             required=False,
+                             type=str)
 
     score_parser = subparsers.add_parser('score')
     score_parser.add_argument('--score',
