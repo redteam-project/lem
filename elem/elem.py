@@ -77,14 +77,13 @@ class Elem(object):
     def assess(self):
         assessed_cves = []
         lines = []
+        error_lines = []
         try:
             command = ["yum", "updateinfo", "list", "cves"]
-            try:
-                lines = subprocess.check_output(command).split('\n')
-            except AttributeError:
-                p = subprocess.Popen(command, stdout=subprocess.PIPE)
-                out, err = p.communicate()
-                lines = out.split('\n')
+            p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            lines = out.split('\n')
+            error_lines = err.split('\n')
         except OSError:
             self.logger.error("\'assess\' may only be "
                               "run on an Enterprise Linux host.")
