@@ -91,7 +91,9 @@ class Elem(object):
         error_lines = []
         try:
             command = ["yum", "updateinfo", "list", "cves"]
-            p = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+            p = subprocess.Popen(command,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
             out, err = p.communicate()
             lines = out.split('\n')
             error_lines = err.split('\n')

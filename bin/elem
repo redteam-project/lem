@@ -4,6 +4,7 @@ import sys
 import argparse
 sys.path.append("../")
 from elem.elem import Elem
+from distutils import sysconfig
 
 sys.dont_write_bytecode = True
 red_hat_security_api = 'https://access.redhat.com/labs/securitydataapi'
@@ -30,7 +31,7 @@ def main():
                         required=False)
     parser.add_argument('--exploits',
                         help='Directory to store exploit data',
-                        default='../exploits',
+                        default=sysconfig.get_python_lib() + '/elem/exploits',
                         required=False)
 
     subparsers = parser.add_subparsers()
