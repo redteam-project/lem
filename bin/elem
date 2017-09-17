@@ -5,6 +5,7 @@ import argparse
 sys.path.append("../")
 from elem.elem import Elem
 from distutils import sysconfig
+from os.path import expanduser
 
 sys.dont_write_bytecode = True
 red_hat_security_api = 'https://access.redhat.com/labs/securitydataapi'
@@ -106,6 +107,23 @@ def main():
                                const=True,
                                default='t',
                                help=argparse.SUPPRESS)
+
+    copy_parser = subparsers.add_parser('copy')
+    copy_parser.add_argument('--copy',
+                               required=False,
+                               type=str2bool,
+                               nargs='?',
+                               const=True,
+                               default='t',
+                               help=argparse.SUPPRESS)
+    copy_parser.add_argument('--destination',
+                              required=False,
+                              default=expanduser("~"),
+                              type=str)
+    copy_parser.add_argument('--edbid',
+                              help='Which exploit to copy',
+                              required=True,
+                              type=str)
 
     args = parser.parse_args()
     mapper = Elem(args)

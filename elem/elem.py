@@ -7,6 +7,7 @@ import sys
 import subprocess
 import re
 import log
+import shutil
 
 
 class Elem(object):
@@ -32,6 +33,8 @@ class Elem(object):
                                self.args.value)
         elif hasattr(self.args, 'assess'):
             self.assess()
+        elif hasattr(self.args, 'copy'):
+            self.copy(self.args.edbid, self.args.destination)
 
     def refresh(self,
                 security_api_url):
@@ -115,3 +118,10 @@ class Elem(object):
                 strings = self.exploitdb.get_exploit_strings(edbid)
                 for string in strings:
                     self.console_logger.info(string)
+
+    def copy(self, edbid, destination):
+        self.exploitdb.refresh_exploits_with_cves()
+        self.console_logger.info("Copying from %s to %s." %
+                                (self.exploitdb.exploits[edbid]['filename'],
+                                 destination))
+        shutil.copy(self.exploitdb.exploits[edbid]['filename'], destination)
