@@ -12,13 +12,14 @@ class SecurityAPI(object):
         self.baseurl = baseurl
         self.cve_list = []
         self.logger = logging.getLogger('elem')
+        self.console_logger = logging.getLogger('console')
 
     def refresh(self):
-        self.logger.info("Updating CVE's from API.")
+        self.console_logger.info("Updating CVE's from API.")
         cves_from_api = self.get_data('cve.json', ['per_page=20000'])
         for cve in cves_from_api:
             self.cve_list.append(cve['CVE'])
-        self.logger.info("Finished updating CVE's from API.")
+        self.console_logger.info("Finished updating CVE's from API.")
 
     def get_data(self, query_type, params=[]):
         url = self.baseurl + '/' + query_type

@@ -15,7 +15,8 @@ class Elem(object):
         self.logger = log.setup_custom_logger('elem')
         self.console_logger = log.setup_console_logger('console')
         self.exploitdb = ExploitDatabase(self.args.exploitdb,
-                                         self.args.exploits)
+                                         self.args.exploits,
+                                         self.args.exploitdbrepo)
 
     def run(self):
 
@@ -35,6 +36,7 @@ class Elem(object):
     def refresh(self,
                 security_api_url):
 
+        self.exploitdb.refresh_repository()
         self.exploitdb.refresh_exploits_with_cves()
 
         securityapi = SecurityAPI(security_api_url)
