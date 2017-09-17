@@ -1,2 +1,2 @@
 include README.md
-include exploits/*
+include elem/exploits/*.json

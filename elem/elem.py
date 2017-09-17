@@ -15,14 +15,16 @@ class Elem(object):
         self.logger = log.setup_custom_logger('elem')
         self.console_logger = log.setup_console_logger('console')
         self.exploitdb = ExploitDatabase(self.args.exploitdb,
-                                         self.args.exploits)
+                                         self.args.exploits,
+                                         self.args.exploitdbrepo)
 
     def run(self):
 
         if hasattr(self.args, 'refresh'):
             self.refresh(self.args.securityapi)
         elif hasattr(self.args, 'list'):
-            self.list_exploits(self.args.edbid)
+            self.list_exploits(self.args.edbid,
+                               self.args.cveid)
         elif hasattr(self.args, 'score'):
             self.score_exploit(self.args.edbid,
                                self.args.version,
@@ -34,6 +36,7 @@ class Elem(object):
     def refresh(self,
                 security_api_url):
 
+        self.exploitdb.refresh_repository()
         self.exploitdb.refresh_exploits_with_cves()
 
         securityapi = SecurityAPI(security_api_url)
@@ -45,23 +48,33 @@ class Elem(object):
                     self.exploitdb.exploits[edbid]['cves'][cve]['rhapi'] = True
                     self.exploitdb.write(edbid)
 
-    def list_exploits(self,
-                      edbid_to_find=None):
+    def list_exploits(self, edbid_to_find=None, cveid_to_find=None):
         results = []
 
-        if not edbid_to_find:
+        if edbid_to_find:
+            if self.exploitdb.affects_el(edbid_to_find):
+                results += self.exploitdb.get_exploit_strings(edbid_to_find)
+            else:
+                self.console_logger.warn("Exploit ID %s does not appear "
+                                         "to affect enterprise Linux." %
+                                         edbid_to_find)
+                sys.exit(0)
+
+        if cveid_to_find:
+            exploit_ids = self.exploitdb.exploits_by_cve(cveid_to_find)
+            for edbid in exploit_ids:
+                results += self.exploitdb.get_exploit_strings(edbid)
+            if len(exploit_ids) == 0:
+                self.console_logger.warn("There do not appear to be any "
+                                         "exploits that affect CVE %s."
+                                         % cveid_to_find)
+
+
+        if not edbid_to_find and not cveid_to_find:
             for edbid in self.exploitdb.exploits.keys():
                 if self.exploitdb.affects_el(edbid):
                     results += self.exploitdb.get_exploit_strings(edbid)
 
-        elif self.exploitdb.affects_el(edbid_to_find):
-            results += self.exploitdb.get_exploit_strings(edbid_to_find)
-
-        elif not self.exploitdb.affects_el(edbid_to_find):
-            self.console_logger.warn("Exploit ID %s does not appear "
-                                     "to affect enterprise Linux." %
-                                     edbid_to_find)
-            sys.exit(0)
 
         for line in results:
             self.console_logger.info(line)
@@ -77,14 +90,15 @@ class Elem(object):
     def assess(self):
         assessed_cves = []
         lines = []
+        error_lines = []
         try:
             command = ["yum", "updateinfo", "list", "cves"]
-            try:
-                lines = subprocess.check_output(command).split('\n')
-            except AttributeError:
-                p = subprocess.Popen(command, stdout=subprocess.PIPE)
-                out, err = p.communicate()
-                lines = out.split('\n')
+            p = subprocess.Popen(command,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            lines = out.split('\n')
+            error_lines = err.split('\n')
         except OSError:
             self.logger.error("\'assess\' may only be "
                               "run on an Enterprise Linux host.")

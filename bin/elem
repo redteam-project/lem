@@ -4,9 +4,11 @@ import sys
 import argparse
 sys.path.append("../")
 from elem.elem import Elem
+from distutils import sysconfig
 
 sys.dont_write_bytecode = True
 red_hat_security_api = 'https://access.redhat.com/labs/securitydataapi'
+exploitdb_github = 'https://github.com/offensive-security/exploit-database.git'
 
 
 def str2bool(v):
@@ -26,11 +28,16 @@ def main():
 
     parser.add_argument('--exploitdb',
                         help='Exploit DB directory to search',
-                        default='../exploit-database',
+                        default=sysconfig.get_python_lib() +
+                                '/elem/exploit-database',
                         required=False)
     parser.add_argument('--exploits',
                         help='Directory to store exploit data',
-                        default='../exploits',
+                        default=sysconfig.get_python_lib() + '/elem/exploits',
+                        required=False)
+    parser.add_argument('--exploitdbrepo',
+                        help='ExploitDB Git Repository Remote ',
+                        default=exploitdb_github,
                         required=False)
 
     subparsers = parser.add_subparsers()
@@ -58,6 +65,10 @@ def main():
                              help=argparse.SUPPRESS)
     list_parser.add_argument('--edbid',
                              help="The edbid on which to filter.",
+                             required=False,
+                             type=str)
+    list_parser.add_argument('--cveid',
+                             help="The CVE ID on which to filter.",
                              required=False,
                              type=str)
 

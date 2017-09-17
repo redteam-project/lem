@@ -2,7 +2,7 @@ from distutils.core import setup
 import setuptools
 setup(name='elem',
       packages=['elem'],
-      install_requires=['requests', 'GitPython'],
+      install_requires=['requests', 'GitPython', 'python-dateutil'],
       version='0.0.2',
       description='Tool to correlate published CVE\'s against Enterprise Linux against known exploits.',
       author='Kenneth Evensen',
@@ -16,6 +16,6 @@ setup(name='elem',
             'License :: OSI Approved :: Apache Software License',
             'Programming Language :: Python :: 2.7',
       ],
-      package_data={'elem': ['exploits/*']},
+      include_package_data=True,
       scripts=['bin/elem'],
       platforms=['Linux'])
