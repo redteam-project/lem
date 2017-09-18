@@ -2,6 +2,7 @@
 
 import sys
 import argparse
+import os
 sys.path.append("../")
 from elem.elem import Elem
 from distutils import sysconfig
@@ -20,6 +21,11 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
+def get_package_dir():
+    if os.path.isdir(sysconfig.get_python_lib() +'/elem/'):
+        return sysconfig.get_python_lib()
+    return '..'
+
 
 def main():
 
@@ -29,12 +35,11 @@ def main():
 
     parser.add_argument('--exploitdb',
                         help='Exploit DB directory to search',
-                        default=sysconfig.get_python_lib() +
-                                '/elem/exploit-database',
+                        default=get_package_dir() + '/elem/exploit-database',
                         required=False)
     parser.add_argument('--exploits',
                         help='Directory to store exploit data',
-                        default=sysconfig.get_python_lib() + '/elem/exploits',
+                        default=get_package_dir() + '/elem/exploits',
                         required=False)
     parser.add_argument('--exploitdbrepo',
                         help='ExploitDB Git Repository Remote ',
