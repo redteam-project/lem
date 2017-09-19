@@ -1,6 +1,7 @@
 #!/usr/bin/python
 
 from exploit_database import ExploitDatabase
+from exploit_manager import ExploitManager
 from security_api import SecurityAPI
 
 import sys
@@ -16,28 +17,16 @@ class Elem(object):
         self.args = args
         self.logger = log.setup_custom_logger('elem')
         self.console_logger = log.setup_console_logger('console')
-        exploitdb_path = ''
-        exploit_path = ''
-        if self.args.exploitdb:
-            exploitdb_path = self.args.exploitdb
-        else:
-            exploitdb_path = os.path.dirname(os.path.realpath(__file__))  + \
-            '/exploit-databse'
 
-        if self.args.exploits:
-            exploit_path = self.args.exploit
-        else:
-            exploit_path = os.path.dirname(os.path.realpath(__file__)) + \
-            '/exploits'
-
-        self.exploitdb = ExploitDatabase(exploitdb_path,
-                                         exploit_path,
+        self.exploitdb = ExploitDatabase(self.args.exploitdb,
                                          self.args.exploitdbrepo)
+        self.exploit_manager = ExploitManager(self.args.exploits,
+                                              self.args.exploitsrepo)
 
     def run(self):
 
         if hasattr(self.args, 'refresh'):
-            self.refresh(self.args.securityapi)
+            self.refresh(self.args.securityapi, self.args.sslverify)
         elif hasattr(self.args, 'list'):
             self.list_exploits(self.args.edbid,
                                self.args.cveid)
@@ -54,26 +43,61 @@ class Elem(object):
             self.patch(self.args.edbid)
 
     def refresh(self,
-                security_api_url):
+                security_api_url,
+                sslverify):
 
-        self.exploitdb.refresh_repository()
+        self.exploitdb.refresh_exploitdb_repository()
         self.exploitdb.refresh_exploits_with_cves()
+        self.exploit_manager.refresh_exploits_repository()
+        self.exploit_manager.load_exploit_info()
+        # We will reconcile information from the exploit database with the
+        # existing exploit data.
+        for edbid in self.exploitdb.exploits.keys():
+            # Add an exploit if it doesn't exist
+            if edbid not in self.exploit_manager.exploits.keys():
+                self.exploit_manager.exploits[edbid] = dict(filename='',
+                                                            cves=dict())
+                self.exploit_manager.write(edbid)
 
-        securityapi = SecurityAPI(security_api_url)
+            # Update the file name if necessary
+            if self.exploit_manager.exploits[edbid]['filename'] != \
+                    self.exploitdb.exploits[edbid]['filename']:
+                self.exploit_manager.exploits[edbid]['filename'] = \
+                    self.exploitdb.exploits[edbid]['filename']
+                self.exploit_manager.write(edbid)
+
+
+            # Ensure that all CVE's detected from exploit-db are present in
+            # curation information.
+            for cveid in self.exploitdb.exploits[edbid]['cves']:
+                if cveid not in \
+                        self.exploit_manager.exploits[edbid]['cves'].keys():
+                    self.exploit_manager.exploits[edbid]['cves'][cveid] = \
+                        dict()
+                    self.exploit_manager.write(edbid)
+        # Next, query the security API
+        securityapi = SecurityAPI(security_api_url, sslverify)
         securityapi.refresh()
 
+        # Indicate whether a CVE was found in the security API or not
         for cve in securityapi.cve_list:
-            for edbid in self.exploitdb.exploits.keys():
-                if cve in self.exploitdb.exploits[edbid]['cves'].keys():
-                    self.exploitdb.exploits[edbid]['cves'][cve]['rhapi'] = True
-                    self.exploitdb.write(edbid)
+            for edbid in self.exploit_manager.exploits.keys():
+                if cve in self.exploit_manager.exploits[edbid]['cves'].keys():
+                    self.exploit_manager.exploits[edbid]['cves'][cve]['rhapi'] = True
+                    self.exploit_manager.write(edbid)
 
     def list_exploits(self, edbid_to_find=None, cveid_to_find=None):
         results = []
+        try:
+            self.exploit_manager.load_exploit_info()
+        except OSError:
+            self.console_logger.error("\nNo exploit information loaded.  "
+                                      "Please try: elem refresh\n")
+            sys.exit(1)
 
         if edbid_to_find:
-            if self.exploitdb.affects_el(edbid_to_find):
-                results += self.exploitdb.get_exploit_strings(edbid_to_find)
+            if self.exploit_manager.affects_el(edbid_to_find):
+                results += self.exploit_manager.get_exploit_strings(edbid_to_find)
             else:
                 self.console_logger.warn("Exploit ID %s does not appear "
                                          "to affect enterprise Linux." %
@@ -81,9 +105,9 @@ class Elem(object):
                 sys.exit(0)
 
         if cveid_to_find:
-            exploit_ids = self.exploitdb.exploits_by_cve(cveid_to_find)
+            exploit_ids = self.exploit_manager.exploits_by_cve(cveid_to_find)
             for edbid in exploit_ids:
-                results += self.exploitdb.get_exploit_strings(edbid)
+                results += self.exploit_manager.get_exploit_strings(edbid)
             if len(exploit_ids) == 0:
                 self.console_logger.warn("There do not appear to be any "
                                          "exploits that affect CVE %s."
@@ -91,13 +115,18 @@ class Elem(object):
 
 
         if not edbid_to_find and not cveid_to_find:
-            for edbid in self.exploitdb.exploits.keys():
-                if self.exploitdb.affects_el(edbid):
-                    results += self.exploitdb.get_exploit_strings(edbid)
+            for edbid in self.exploit_manager.exploits.keys():
+                if self.exploit_manager.affects_el(edbid):
+                    results += self.exploit_manager.get_exploit_strings(edbid)
 
 
         for line in results:
             self.console_logger.info(line)
+
+        if len(results) == 0:
+            self.console_logger.warn("There do not appear to be any "
+                                     "exploit information available.  Please"
+                                     " try: elem refresh")
 
     def score_exploit(self,
                       edbid,

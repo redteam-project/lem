@@ -10,6 +10,7 @@ from os.path import expanduser
 sys.dont_write_bytecode = True
 red_hat_security_api = 'https://access.redhat.com/labs/securitydataapi'
 exploitdb_github = 'https://github.com/offensive-security/exploit-database.git'
+exploits_github = 'https://github.com/fedoraredteam/elem-curation.git'
 
 
 def str2bool(v):
@@ -28,12 +29,16 @@ def main():
     parser.add_argument('--exploitdb',
                         help='Exploit DB directory to search',
                         required=False)
-    parser.add_argument('--exploits',
-                        help='Directory to store exploit data',
-                        required=False)
     parser.add_argument('--exploitdbrepo',
                         help='ExploitDB Git Repository Remote ',
                         default=exploitdb_github,
+                        required=False)
+    parser.add_argument('--exploits',
+                        help='Directory to store exploit data',
+                        required=False)
+    parser.add_argument('--exploitsrepo',
+                        help='Exploits Git Repository Remote ',
+                        default=exploits_github,
                         required=False)
 
     subparsers = parser.add_subparsers()
@@ -45,6 +50,13 @@ def main():
                                 const=True,
                                 default='t',
                                 help=argparse.SUPPRESS)
+    refresh_parser.add_argument('--sslverify',
+                                required=False,
+                                type=str2bool,
+                                nargs='?',
+                                const=True,
+                                default='t',
+                                help='Use SSL when querying Security API\'s')
 
     refresh_parser.add_argument('--securityapi',
                                 help='Red Hat Security API base URL.',
