@@ -133,8 +133,14 @@ class Elem(object):
                       version,
                       score_kind,
                       score):
-        self.exploitdb.score(edbid, version, score_kind, score)
-        self.exploitdb.write(edbid)
+        try:
+            self.exploit_manager.load_exploit_info()
+        except OSError:
+            self.console_logger.error("\nNo exploit information loaded.  "
+                                      "Please try: elem refresh\n")
+            sys.exit(1)
+        self.exploit_manager.score(edbid, version, score_kind, score)
+        self.exploit_manager.write(edbid)
 
     def assess(self):
         assessed_cves = []
@@ -159,18 +165,19 @@ class Elem(object):
                 assessed_cves.append(result[0])
 
         for cveid in assessed_cves:
-            edbids = self.exploitdb.exploits_by_cve(cveid)
+            edbids = self.exploit_manager.exploits_by_cve(cveid)
             for edbid in edbids:
-                strings = self.exploitdb.get_exploit_strings(edbid)
+                strings = self.exploit_manager.get_exploit_strings(edbid)
                 for string in strings:
                     self.console_logger.info(string)
 
     def copy(self, edbid, destination):
         self.exploitdb.refresh_exploits_with_cves()
         self.console_logger.info("Copying from %s to %s." %
-                                (self.exploitdb.exploits[edbid]['filename'],
+                                (self.exploit_manager.exploits[edbid]['filename'],
                                  destination))
-        shutil.copy(self.exploitdb.exploits[edbid]['filename'], destination)
+        shutil.copy(self.exploit_manager.exploits[edbid]['filename'],
+                    destination)
 
     def patch(self, edbid):
         self.exploitdb.refresh_exploits_with_cves()
