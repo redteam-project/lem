@@ -28,7 +28,7 @@ class SecurityAPI(object):
             for param in params:
                 url += param
                 url += '&'
-        r = requests.get(url)
+        r = requests.get(url, verify=False)
 
         if r.status_code != 200:
             self.logger.error('ERROR: Invalid request; returned {} for the '

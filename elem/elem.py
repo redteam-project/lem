@@ -8,6 +8,7 @@ import subprocess
 import re
 import log
 import shutil
+import os
 
 
 class Elem(object):
@@ -15,8 +16,22 @@ class Elem(object):
         self.args = args
         self.logger = log.setup_custom_logger('elem')
         self.console_logger = log.setup_console_logger('console')
-        self.exploitdb = ExploitDatabase(self.args.exploitdb,
-                                         self.args.exploits,
+        exploitdb_path = ''
+        exploit_path = ''
+        if self.args.exploitdb:
+            exploitdb_path = self.args.exploitdb
+        else:
+            exploitdb_path = os.path.dirname(os.path.realpath(__file__))  + \
+            '/exploit-databse'
+
+        if self.args.exploits:
+            exploit_path = self.args.exploit
+        else:
+            exploit_path = os.path.dirname(os.path.realpath(__file__)) + \
+            '/exploits'
+
+        self.exploitdb = ExploitDatabase(exploitdb_path,
+                                         exploit_path,
                                          self.args.exploitdbrepo)
 
     def run(self):
@@ -35,6 +50,8 @@ class Elem(object):
             self.assess()
         elif hasattr(self.args, 'copy'):
             self.copy(self.args.edbid, self.args.destination)
+        elif hasattr(self.args, 'patch'):
+            self.patch(self.args.edbid)
 
     def refresh(self,
                 security_api_url):
@@ -125,3 +142,23 @@ class Elem(object):
                                 (self.exploitdb.exploits[edbid]['filename'],
                                  destination))
         shutil.copy(self.exploitdb.exploits[edbid]['filename'], destination)
+
+    def patch(self, edbid):
+        self.exploitdb.refresh_exploits_with_cves()
+        lines = []
+        error_lines = []
+        cves_to_patch = ','.join(self.exploitdb.exploits[edbid]['cves'])
+
+        try:
+            self.console_logger.info("Patching system for EDB ID %s with "
+                                     "CVE(s) %s." % (edbid, cves_to_patch))
+            command = ["yum", "update", "-y", "--cve", cves_to_patch]
+            p = subprocess.Popen(command,
+                                 stdout=subprocess.PIPE,
+                                 stderr=subprocess.PIPE)
+            out, err = p.communicate()
+            self.console_logger.info("Patching Completed.  A system restart" +
+                                     "may be necessary.")
+        except OSError:
+            self.logger.error("\'assess\' may only be "
+                              "run on an Enterprise Linux host.")

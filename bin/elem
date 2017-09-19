@@ -2,7 +2,6 @@
 
 import sys
 import argparse
-import os
 sys.path.append("../")
 from elem.elem import Elem
 from distutils import sysconfig
@@ -21,25 +20,16 @@ def str2bool(v):
     else:
         raise argparse.ArgumentTypeError('Boolean value expected.')
 
-def get_package_dir():
-    if os.path.isdir(sysconfig.get_python_lib() +'/elem/'):
-        return sysconfig.get_python_lib()
-    return '..'
-
-
 def main():
-
     parser = argparse.ArgumentParser(description='Cross Reference CVE\'s ' +
                                      'against a Exploit-DB entries for ' +
                                      'Enterprise Linux.')
 
     parser.add_argument('--exploitdb',
                         help='Exploit DB directory to search',
-                        default=get_package_dir() + '/elem/exploit-database',
                         required=False)
     parser.add_argument('--exploits',
                         help='Directory to store exploit data',
-                        default=get_package_dir() + '/elem/exploits',
                         required=False)
     parser.add_argument('--exploitdbrepo',
                         help='ExploitDB Git Repository Remote ',
@@ -129,6 +119,19 @@ def main():
                               help='Which exploit to copy',
                               required=True,
                               type=str)
+
+    patch_parser = subparsers.add_parser('patch')
+    patch_parser.add_argument('--patch',
+                             required=False,
+                             type=str2bool,
+                             nargs='?',
+                             const=True,
+                             default='t',
+                             help=argparse.SUPPRESS)
+    patch_parser.add_argument('--edbid',
+                             help="The edbid to patch",
+                             required=False,
+                             type=str)
 
     args = parser.parse_args()
     mapper = Elem(args)
