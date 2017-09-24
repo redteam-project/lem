@@ -180,6 +180,12 @@ class Elem(object):
                     self.console_logger.info(string)
 
     def copy(self, edbid, destination):
+        try:
+            self.exploit_manager.load_exploit_info()
+        except OSError:
+            self.console_logger.error("\nNo exploit information loaded.  "
+                                      "Please try: elem refresh\n")
+            sys.exit(1)
         self.exploitdb.refresh_exploits_with_cves()
         self.console_logger.info("Copying from %s to %s." %
                                 (self.exploit_manager.exploits[edbid]['filename'],
@@ -188,6 +194,12 @@ class Elem(object):
                     destination)
 
     def patch(self, edbid):
+        try:
+            self.exploit_manager.load_exploit_info()
+        except OSError:
+            self.console_logger.error("\nNo exploit information loaded.  "
+                                      "Please try: elem refresh\n")
+            sys.exit(1)
         self.exploitdb.refresh_exploits_with_cves()
         lines = []
         error_lines = []
