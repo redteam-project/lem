@@ -146,6 +146,14 @@ class Elem(object):
         assessed_cves = []
         lines = []
         error_lines = []
+
+        try:
+            self.exploit_manager.load_exploit_info()
+        except OSError:
+            self.console_logger.error("\nNo exploit information loaded.  "
+                                      "Please try: elem refresh\n")
+            sys.exit(1)
+
         try:
             command = ["yum", "updateinfo", "list", "cves"]
             p = subprocess.Popen(command,
