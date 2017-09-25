@@ -180,25 +180,21 @@ class Elem(object):
                     self.console_logger.info(string)
 
     def copy(self, edbids, destination, stage=False):
-        cwd = os.getcwd()
         try:
             self.exploit_manager.load_exploit_info()
         except OSError:
             self.console_logger.error("\nNo exploit information loaded.  "
                                       "Please try: elem refresh\n")
             sys.exit(1)
-        #self.exploitdb.refresh_exploits_with_cves()
 
         for edbid in edbids:
-            os.chdir(cwd)
             self.console_logger.info("Copying from %s to %s." %
                             (self.exploit_manager.exploits[edbid]['filename'],
                              destination))
             shutil.copy(self.exploit_manager.exploits[edbid]['filename'],
                         destination)
             if stage:
-                os.chdir(destination)
-                success, msg = self.exploit_manager.stage(edbid)
+                success, msg = self.exploit_manager.stage(edbid, destination)
                 if success:
                     self.console_logger.info("Successfuly staged exploit %s" %
                                              (edbid))
