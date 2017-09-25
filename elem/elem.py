@@ -38,9 +38,11 @@ class Elem(object):
         elif hasattr(self.args, 'assess'):
             self.assess()
         elif hasattr(self.args, 'copy'):
-            self.copy(self.args.edbid, self.args.destination)
+            self.copy(self.args.edbid, self.args.destination, self.args.stage)
         elif hasattr(self.args, 'patch'):
             self.patch(self.args.edbid)
+        elif hasattr(self.args, 'setstage'):
+            self.set_stage_info(self.args.edbid, self.args.stageinfo)
 
     def refresh(self,
                 security_api_url,
@@ -113,12 +115,10 @@ class Elem(object):
                                          "exploits that affect CVE %s."
                                          % cveid_to_find)
 
-
         if not edbids_to_find and not cveids_to_find:
             for edbid in self.exploit_manager.exploits.keys():
                 if self.exploit_manager.affects_el(edbid):
                     results += self.exploit_manager.get_exploit_strings(edbid)
-
 
         for line in results:
             self.console_logger.info(line)
@@ -179,21 +179,33 @@ class Elem(object):
                 for string in strings:
                     self.console_logger.info(string)
 
-    def copy(self, edbids, destination):
+    def copy(self, edbids, destination, stage=False):
+        cwd = os.getcwd()
         try:
             self.exploit_manager.load_exploit_info()
         except OSError:
             self.console_logger.error("\nNo exploit information loaded.  "
                                       "Please try: elem refresh\n")
             sys.exit(1)
-        self.exploitdb.refresh_exploits_with_cves()
+        #self.exploitdb.refresh_exploits_with_cves()
 
         for edbid in edbids:
+            os.chdir(cwd)
             self.console_logger.info("Copying from %s to %s." %
                             (self.exploit_manager.exploits[edbid]['filename'],
                              destination))
             shutil.copy(self.exploit_manager.exploits[edbid]['filename'],
                         destination)
+            if stage:
+                os.chdir(destination)
+                success, msg = self.exploit_manager.stage(edbid)
+                if success:
+                    self.console_logger.info("Successfuly staged exploit %s" %
+                                             (edbid))
+                else:
+                    self.console_logger.info("Unsuccessfuly staged exploit " +
+                                             "%s with error message %s." %
+                                             (edbid, str(msg)))
 
     def patch(self, edbid):
         try:
@@ -220,3 +232,16 @@ class Elem(object):
         except OSError:
             self.logger.error("\'assess\' may only be "
                               "run on an Enterprise Linux host.")
+
+    def set_stage_info(self, edbid, stage_info):
+        try:
+            self.exploit_manager.load_exploit_info()
+        except OSError:
+            self.console_logger.error("\nNo exploit information loaded.  "
+                                      "Please try: elem refresh\n")
+            sys.exit(1)
+
+        self.console_logger.info("Setting stage command for %s to %s." %
+                                 (edbid, stage_info))
+        self.exploit_manager.set_stage_info(edbid, stage_info)
+        self.exploit_manager.write(edbid)

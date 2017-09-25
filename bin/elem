@@ -136,6 +136,12 @@ def main():
                               required=True,
                               nargs='*',
                               type=str)
+    copy_parser.add_argument('--stage',
+                               required=False,
+                               type=str2bool,
+                               nargs='?',
+                               const=True,
+                               default='f')
 
     patch_parser = subparsers.add_parser('patch')
     patch_parser.add_argument('--patch',
@@ -148,7 +154,23 @@ def main():
     patch_parser.add_argument('--edbid',
                              help="The edbid to patch",
                              required=True,
-                             nargs='*',
+                             type=str)
+
+    set_stage_parser = subparsers.add_parser('setstage')
+    set_stage_parser.add_argument('--setstage',
+                             required=False,
+                             type=str2bool,
+                             nargs='?',
+                             const=True,
+                             default='t',
+                             help=argparse.SUPPRESS)
+    set_stage_parser.add_argument('--edbid',
+                             help="The edbid on which to set stage info",
+                             required=True,
+                             type=str)
+    set_stage_parser.add_argument('--stageinfo',
+                             help="The command used to stage the exploit",
+                             required=True,
                              type=str)
 
     args = parser.parse_args()
