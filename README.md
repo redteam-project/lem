@@ -1,11 +1,12 @@
 # Elem
 Python Enterprise Linux Exploit Mapper
+## Background
+The objective of the **elem** tool is to assist with assessments known exploits on an enterprise Linux host.  Initially the [STRIDE](https://msdn.microsoft.com/en-us/library/ee823878%28v=cs.20%29.aspx) threat scoring model will be used though this tool is designed to support additional models.
 ## Getting Started
 There are a couple of ways to get started.  Clone the Repository or PIP.
 ### Clone the Repository
 ```
-git clone https://github.com/fedoraredteam/elem
-git submodule update --recursive
+git clone --recursive https://github.com/fedoraredteam/elem
 ```
 ### Python PIP
 ```
@@ -63,4 +64,21 @@ usage: elem assess [-h]
 
 optional arguments:
   -h, --help  show this help message and exit
+```
+### Copy an Exploit to a Directory for Testing
+```terminal
+usage: elem copy [-h] [--destination DESTINATION] --edbid EDBID
+
+optional arguments:
+  -h, --help            show this help message and exit
+  --destination DESTINATION
+  --edbid EDBID         Which exploit to copy
+```
+### Path the System Against an Exploit
+```terminal
+usage: elem patch [-h] [--edbid EDBID]
+
+optional arguments:
+  -h, --help     show this help message and exit
+  --edbid EDBID  The edbid to patch
 ```
