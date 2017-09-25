@@ -72,12 +72,16 @@ def main():
                              default='t',
                              help=argparse.SUPPRESS)
     list_parser.add_argument('--edbid',
-                             help="The edbid on which to filter.",
+                             help="The edbid(s) on which to filter.",
                              required=False,
+                             nargs='*',
+                             default=[],
                              type=str)
     list_parser.add_argument('--cveid',
-                             help="The CVE ID on which to filter.",
+                             help="The CVE ID(s) on which to filter.",
                              required=False,
+                             nargs='*',
+                             default=[],
                              type=str)
 
     score_parser = subparsers.add_parser('score')
@@ -128,8 +132,9 @@ def main():
                               default=expanduser("~"),
                               type=str)
     copy_parser.add_argument('--edbid',
-                              help='Which exploit to copy',
+                              help='Which exploit(s) to copy',
                               required=True,
+                              nargs='*',
                               type=str)
 
     patch_parser = subparsers.add_parser('patch')
@@ -142,7 +147,8 @@ def main():
                              help=argparse.SUPPRESS)
     patch_parser.add_argument('--edbid',
                              help="The edbid to patch",
-                             required=False,
+                             required=True,
+                             nargs='*',
                              type=str)
 
     args = parser.parse_args()

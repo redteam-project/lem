@@ -86,7 +86,7 @@ class Elem(object):
                     self.exploit_manager.exploits[edbid]['cves'][cve]['rhapi'] = True
                     self.exploit_manager.write(edbid)
 
-    def list_exploits(self, edbid_to_find=None, cveid_to_find=None):
+    def list_exploits(self, edbids_to_find=[], cveids_to_find=[]):
         results = []
         try:
             self.exploit_manager.load_exploit_info()
@@ -95,7 +95,7 @@ class Elem(object):
                                       "Please try: elem refresh\n")
             sys.exit(1)
 
-        if edbid_to_find:
+        for edbid_to_find in edbids_to_find:
             if self.exploit_manager.affects_el(edbid_to_find):
                 results += self.exploit_manager.get_exploit_strings(edbid_to_find)
             else:
@@ -104,7 +104,7 @@ class Elem(object):
                                          edbid_to_find)
                 sys.exit(0)
 
-        if cveid_to_find:
+        for cveid_to_find in cveids_to_find:
             exploit_ids = self.exploit_manager.exploits_by_cve(cveid_to_find)
             for edbid in exploit_ids:
                 results += self.exploit_manager.get_exploit_strings(edbid)
@@ -114,7 +114,7 @@ class Elem(object):
                                          % cveid_to_find)
 
 
-        if not edbid_to_find and not cveid_to_find:
+        if not edbids_to_find and not cveids_to_find:
             for edbid in self.exploit_manager.exploits.keys():
                 if self.exploit_manager.affects_el(edbid):
                     results += self.exploit_manager.get_exploit_strings(edbid)
@@ -179,7 +179,7 @@ class Elem(object):
                 for string in strings:
                     self.console_logger.info(string)
 
-    def copy(self, edbid, destination):
+    def copy(self, edbids, destination):
         try:
             self.exploit_manager.load_exploit_info()
         except OSError:
@@ -187,11 +187,13 @@ class Elem(object):
                                       "Please try: elem refresh\n")
             sys.exit(1)
         self.exploitdb.refresh_exploits_with_cves()
-        self.console_logger.info("Copying from %s to %s." %
-                                (self.exploit_manager.exploits[edbid]['filename'],
-                                 destination))
-        shutil.copy(self.exploit_manager.exploits[edbid]['filename'],
-                    destination)
+
+        for edbid in edbids:
+            self.console_logger.info("Copying from %s to %s." %
+                            (self.exploit_manager.exploits[edbid]['filename'],
+                             destination))
+            shutil.copy(self.exploit_manager.exploits[edbid]['filename'],
+                        destination)
 
     def patch(self, edbid):
         try:
