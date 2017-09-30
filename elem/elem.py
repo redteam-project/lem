@@ -67,6 +67,8 @@ class Elem(object):
         self.exploit_manager.refresh_repository()
         self.console_logger.info("Finished Refreshing Exploits Repository")
         self.exploit_manager.load_exploit_info()
+        self.console_logger.info("Reconcile Existing Data with Data "
+                                 "from ExploitDB")
         # We will reconcile information from the exploit database with the
         # existing exploit data.
         for edbid in self.exploitdb.exploits.keys():
@@ -92,7 +94,10 @@ class Elem(object):
                     self.exploit_manager.exploits[edbid]['cves'][cveid] = \
                         dict()
                     self.exploit_manager.write(edbid)
+        self.console_logger.info("Finished Reconciling Existing Data With "
+                                 "Data from ExploitDB")
         # Next, query the security API
+        self.console_logger.info("Refresh Data from SecurityAPI")
         securityapi = SecurityAPI(security_api_url, sslverify)
         securityapi.refresh()
 
@@ -102,6 +107,7 @@ class Elem(object):
                 if cve in self.exploit_manager.exploits[edbid]['cves'].keys():
                     self.exploit_manager.exploits[edbid]['cves'][cve]['rhapi'] = True
                     self.exploit_manager.write(edbid)
+        self.console_logger.info("Finished Refreshing Data from SecurityAPI")
 
     def list_exploits(self, edbids_to_find=[], cveids_to_find=[]):
         results = []
@@ -197,6 +203,8 @@ class Elem(object):
                     self.console_logger.info(string)
 
     def copy(self, edbids, destination, stage=False, cpe=''):
+        dirname = os.path.dirname(os.path.realpath(__file__))
+
         try:
             self.exploit_manager.load_exploit_info()
         except OSError:
@@ -208,8 +216,9 @@ class Elem(object):
             self.console_logger.info("Copying from %s to %s." %
                             (self.exploit_manager.exploits[edbid]['filename'],
                              destination))
-            shutil.copy(self.exploit_manager.exploits[edbid]['filename'],
-                        destination)
+            fullpath = os.path.join(self.exploitdb.content_path,
+                                    self.exploit_manager.exploits[edbid]['filename'])
+            shutil.copy(fullpath, destination)
             if stage and cpe is not '':
                 success, msg = self.exploit_manager.stage(edbid,
                                                           destination,
