@@ -151,7 +151,8 @@ def main():
                                const=True,
                                default='f')
     copy_parser.add_argument('--cpe',
-                              required=True,
+                              required=False,
+                              default=read_cpe(),
                               type=str)
 
     patch_parser = subparsers.add_parser('patch')
@@ -199,7 +200,8 @@ def main():
                              required=False,
                              type=str)
     set_stage_parser.add_argument('--cpe',
-                              required=True,
+                              required=False,
+                              default=read_cpe(),
                               type=str)
 
 
