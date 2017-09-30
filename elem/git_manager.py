@@ -5,7 +5,6 @@ import os
 class GitManager(object):
 
     def __init__(self, content_path, content_repo, folder=''):
-
         if content_path is None:
             self.content_path = os.path.dirname(os.path.realpath(__file__))
             if folder is not '':
@@ -13,7 +12,6 @@ class GitManager(object):
                 self.content_path += folder
         else:
             self.content_path = content_path
-        self.content_path = os.path.relpath(self.content_path)
         self.content_repo = content_repo
 
     def refresh_repository(self):
