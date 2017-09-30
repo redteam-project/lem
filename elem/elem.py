@@ -187,6 +187,8 @@ class Elem(object):
             if result and result[0] not in assessed_cves:
                 assessed_cves.append(result[0])
 
+        assessed_cves = list(set(assessed_cves))
+
         for cveid in assessed_cves:
             edbids = self.exploit_manager.exploits_by_cve(cveid)
             for edbid in edbids:
