@@ -25,6 +25,9 @@ class Elem(object):
 
     def run(self):
 
+        if hasattr(self.args, 'cpe') and 'Not Defined' in self.args.cpe:
+            self.console_logger.error("CPE is required but not defined.")
+
         if hasattr(self.args, 'refresh'):
             self.refresh(self.args.securityapi, self.args.sslverify)
         elif hasattr(self.args, 'list'):

@@ -15,8 +15,8 @@ exploits_github = 'https://github.com/fedoraredteam/elem-curation.git'
 def read_cpe():
     file_name = '/etc/system-release-cpe'
     try:
-        with open(file_name, 'w') as cpe_file:
-            return cpe_file.read()
+        with open(file_name, 'r') as cpe_file:
+            return cpe_file.read().replace('\n','')
     except IOError:
         return 'Not Detected'
 
