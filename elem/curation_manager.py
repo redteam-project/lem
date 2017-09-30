@@ -1,10 +1,10 @@
 import json
-import logging
 from git import Repo
 from git.repo import fun
 from git_manager import GitManager
 import os
 import subprocess
+import logging
 
 class ExploitManager(GitManager):
     def __init__(self, exploit_path,
@@ -14,6 +14,8 @@ class ExploitManager(GitManager):
         super(ExploitManager, self).__init__(exploit_path,
                                              exploits_repo,
                                              'elem-curation')
+
+        self.logger = logging.getLogger('elem')
 
         self.exploits = dict()
         self.exploit_path = self.content_path
