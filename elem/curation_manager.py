@@ -119,16 +119,16 @@ class ExploitManager(GitManager):
     def set_selinux(self, edbid, cpe, selinux):
         self.add_cpe(edbid, cpe)
 
-        if 'services' not in self.exploits[edbid]['cpes'][cpe].keys():
+        if 'selinux' not in self.exploits[edbid]['cpes'][cpe].keys():
             self.exploits[edbid]['cpes'][cpe]['selinux'] = selinux
 
 
     def stage(self, edbid, destination, cpe):
-        if 'staging' not in self.exploits[edbid][cpe]:
+        if 'staging' not in self.exploits[edbid]['cpes'][cpe]:
             return False, "No staging information available."
 
         try:
-            command = self.exploits[edbid][cpe]['staging'].split(' ')
+            command = self.exploits[edbid]['cpes'][cpe]['staging'].split(' ')
             p = subprocess.Popen(command,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
@@ -138,7 +138,7 @@ class ExploitManager(GitManager):
             error_lines = err.split('\n')
         except OSError:
             self.logger.error("Command %s cannot be run on this host." %
-                              self.exploits[edbid][cpe]['staging'])
+                              self.exploits[edbid]['cpes'][cpe]['staging'])
             sys.exit(1)
         if p.returncode != 0:
             return False, ','.join(error_lines)
