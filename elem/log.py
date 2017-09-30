@@ -15,7 +15,10 @@ def setup_custom_logger(name):
 
 
 def setup_console_logger(name):
+    format_string = '\n%(message)s'
+    formatter = logging.Formatter(fmt=format_string)
     handler = logging.StreamHandler()
+    handler.setFormatter(formatter)
 
     logger = logging.getLogger(name)
     logger.setLevel(logging.DEBUG)

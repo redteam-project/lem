@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 from exploit_database import ExploitDatabase
-from exploit_manager import ExploitManager
-from security_api import SecurityAPI
+from curation_manager import ExploitManager
+from cve_manager import SecurityAPI
 
 import sys
 import subprocess
@@ -47,10 +47,17 @@ class Elem(object):
     def refresh(self,
                 security_api_url,
                 sslverify):
-
-        self.exploitdb.refresh_exploitdb_repository()
+        self.console_logger.info("Refresh ExploitDB Repository")
+        self.exploitdb.refresh_repository()
+        self.console_logger.info("Finished Refreshing ExploitDB Repository")
+        self.console_logger.info("Searching for CVE Information" +
+                                 " in Known Exploits")
         self.exploitdb.refresh_exploits_with_cves()
-        self.exploit_manager.refresh_exploits_repository()
+        self.console_logger.info("Finished Searching for CVE Information" +
+                                 " in Known Exploits")
+        self.console_logger.info("Refreshing Exploits Repository")
+        self.exploit_manager.refresh_repository()
+        self.console_logger.info("Finished Refreshing Exploits Repository")
         self.exploit_manager.load_exploit_info()
         # We will reconcile information from the exploit database with the
         # existing exploit data.

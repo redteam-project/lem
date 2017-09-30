@@ -2,63 +2,45 @@ import json
 import logging
 from git import Repo
 from git.repo import fun
+from git_manager import GitManager
 import os
 import subprocess
 
-class ExploitManager(object):
+class ExploitManager(GitManager):
     def __init__(self, exploit_path,
                        exploits_repo,
                        subfolder='/exploits'):
-        if exploit_path is None:
-            self.exploit_path = os.path.dirname(os.path.realpath(__file__)) + \
-            '/exploits'
-        else:
-            self.exploit_path = exploit_path
-        self.exploit_path = os.path.relpath(self.exploit_path)
-        self.exploits_repo = exploits_repo
-        self.exploits = {}
-        self.console_logger = logging.getLogger('console')
-        self.subfolder = subfolder
+
+        super(ExploitManager, self).__init__(exploit_path,
+                                             exploits_repo,
+                                             'elem-curation')
+
+        self.exploits = dict()
+        self.exploit_path = self.content_path
+        if subfolder is not '':
+            self.exploit_path += os.path.sep
+            self.exploit_path += subfolder
+
 
     def load_exploit_info(self):
-        self.exploit_file_names = [f for f in os.listdir(self.exploit_path + self.subfolder)
-                                   if os.path.isfile(os.path.join(self.exploit_path + self.subfolder, f)) and
-                                   os.path.join(os.path.join(self.exploit_path + self.subfolder, f)).endswith(".json")]
+        self.exploit_file_names = [f for f in os.listdir(self.exploit_path)
+                                   if os.path.isfile(os.path.join(self.exploit_path, f)) and
+                                   os.path.join(os.path.join(self.exploit_path, f)).endswith(".json")]
 
         for exploit_file_name in self.exploit_file_names:
-            self.read(os.path.join(self.exploit_path + self.subfolder, exploit_file_name))
-
-    def refresh_exploits_repository(self):
-        self.console_logger.info("Refreshing Exploits Repository")
-        repo = None
-        origin = None
-        if fun.is_git_dir(self.exploit_path):
-            repo = Repo(self.exploit_path)
-        else:
-            repo = Repo.init(self.exploit_path)
-
-        try:
-            origin = repo.remote('origin')
-        except ValueError:
-            origin = repo.create_remote('origin', self.exploits_repo)
-        origin.fetch()
-
-        if 'master' not in repo.heads:
-            repo.create_head('master', origin.refs.master)
-        repo.heads.master.set_tracking_branch(origin.refs.master)
-        repo.heads.master.checkout()
-        origin.pull()
-        self.console_logger.info("Finished Refreshing Exploits Repository")
+            self.read(os.path.join(self.exploit_path, exploit_file_name))
 
     def write(self, edbid):
-        file_name = self.exploit_path + self.subfolder + '/' + edbid + '.json'
+        file_name = self.exploit_path + \
+                    os.path.sep + \
+                    edbid + '.json'
         with open(file_name, 'w') as exploit_file:
             json.dump(self.exploits[edbid], exploit_file)
 
     def read(self, file_name):
         with open(file_name, 'r') as exploit_file:
             root = os.path.splitext(file_name)[0]
-            edbid = root.replace(self.exploit_path + self.subfolder + '/', "")
+            edbid = root.replace(self.exploit_path + '/', "")
             self.exploits[edbid] = json.load(exploit_file)
 
     def affects_el(self, edbid):
