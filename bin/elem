@@ -12,6 +12,13 @@ red_hat_security_api = 'https://access.redhat.com/labs/securitydataapi'
 exploitdb_github = 'https://github.com/offensive-security/exploit-database.git'
 exploits_github = 'https://github.com/fedoraredteam/elem-curation.git'
 
+def read_cpe():
+    file_name = '/etc/system-release-cpe'
+    try:
+        with open(file_name, 'w') as cpe_file:
+            return cpe_file.read()
+    except IOError:
+        return 'Not Detected'
 
 def str2bool(v):
     if v.lower() in ('yes', 'true', 't', 'y', '1'):
@@ -97,7 +104,8 @@ def main():
                               required=True,
                               type=str)
     score_parser.add_argument('--cpe',
-                              required=True,
+                              required=False,
+                              default=read_cpe(),
                               type=str)
     score_parser.add_argument('--kind',
                               required=False,
