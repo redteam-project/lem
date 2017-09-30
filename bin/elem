@@ -142,6 +142,9 @@ def main():
                                nargs='?',
                                const=True,
                                default='f')
+    copy_parser.add_argument('--cpe',
+                              required=True,
+                              type=str)
 
     patch_parser = subparsers.add_parser('patch')
     patch_parser.add_argument('--patch',

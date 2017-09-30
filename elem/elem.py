@@ -38,7 +38,7 @@ class Elem(object):
         elif hasattr(self.args, 'assess'):
             self.assess()
         elif hasattr(self.args, 'copy'):
-            self.copy(self.args.edbid, self.args.destination, self.args.stage)
+            self.copy(self.args.edbid, self.args.destination, self.args.stage, self.args.cpe)
         elif hasattr(self.args, 'patch'):
             self.patch(self.args.edbid)
         elif hasattr(self.args, 'setstage'):
@@ -191,7 +191,7 @@ class Elem(object):
                 for string in strings:
                     self.console_logger.info(string)
 
-    def copy(self, edbids, destination, stage=False):
+    def copy(self, edbids, destination, stage=False, cpe=''):
         try:
             self.exploit_manager.load_exploit_info()
         except OSError:
@@ -205,8 +205,10 @@ class Elem(object):
                              destination))
             shutil.copy(self.exploit_manager.exploits[edbid]['filename'],
                         destination)
-            if stage:
-                success, msg = self.exploit_manager.stage(edbid, destination)
+            if stage and cpe is not '':
+                success, msg = self.exploit_manager.stage(edbid,
+                                                          destination,
+                                                          cpe)
                 if success:
                     self.console_logger.info("Successfuly staged exploit %s" %
                                              (edbid))
@@ -214,6 +216,9 @@ class Elem(object):
                     self.console_logger.info("Unsuccessfuly staged exploit " +
                                              "%s with error message %s." %
                                              (edbid, str(msg)))
+            elif stage and cpe is '':
+                self.console_logger.warn("CPE is undefined so unable to "
+                                         "stage %s" % edbid)
 
     def patch(self, edbid):
         try:
