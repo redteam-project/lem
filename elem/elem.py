@@ -1,8 +1,8 @@
 #!/usr/bin/python
 
 from exploit_database import ExploitDatabase
-from exploit_manager import ExploitManager
-from security_api import SecurityAPI
+from curation_manager import ExploitManager
+from cve_manager import SecurityAPI
 
 import sys
 import subprocess
@@ -25,6 +25,9 @@ class Elem(object):
 
     def run(self):
 
+        if hasattr(self.args, 'cpe') and 'Not Defined' in self.args.cpe:
+            self.console_logger.error("CPE is required but not defined.")
+
         if hasattr(self.args, 'refresh'):
             self.refresh(self.args.securityapi, self.args.sslverify)
         elif hasattr(self.args, 'list'):
@@ -32,25 +35,37 @@ class Elem(object):
                                self.args.cveid)
         elif hasattr(self.args, 'score'):
             self.score_exploit(self.args.edbid,
-                               self.args.version,
+                               self.args.cpe,
                                self.args.kind,
                                self.args.value)
         elif hasattr(self.args, 'assess'):
             self.assess()
         elif hasattr(self.args, 'copy'):
-            self.copy(self.args.edbid, self.args.destination, self.args.stage)
+            self.copy(self.args.edbid, self.args.destination, self.args.stage, self.args.cpe)
         elif hasattr(self.args, 'patch'):
             self.patch(self.args.edbid)
         elif hasattr(self.args, 'setstage'):
-            self.set_stage_info(self.args.edbid, self.args.stageinfo)
+            self.set_stage_info(self.args.edbid,
+                                self.args.cpe,
+                                self.args.command,
+                                self.args.packages,
+                                self.args.services,
+                                self.args.selinux)
 
     def refresh(self,
                 security_api_url,
                 sslverify):
-
-        self.exploitdb.refresh_exploitdb_repository()
+        self.console_logger.info("Refresh ExploitDB Repository")
+        self.exploitdb.refresh_repository()
+        self.console_logger.info("Finished Refreshing ExploitDB Repository")
+        self.console_logger.info("Searching for CVE Information" +
+                                 " in Known Exploits")
         self.exploitdb.refresh_exploits_with_cves()
-        self.exploit_manager.refresh_exploits_repository()
+        self.console_logger.info("Finished Searching for CVE Information" +
+                                 " in Known Exploits")
+        self.console_logger.info("Refreshing Exploits Repository")
+        self.exploit_manager.refresh_repository()
+        self.console_logger.info("Finished Refreshing Exploits Repository")
         self.exploit_manager.load_exploit_info()
         # We will reconcile information from the exploit database with the
         # existing exploit data.
@@ -130,7 +145,7 @@ class Elem(object):
 
     def score_exploit(self,
                       edbid,
-                      version,
+                      cpe,
                       score_kind,
                       score):
         try:
@@ -139,7 +154,7 @@ class Elem(object):
             self.console_logger.error("\nNo exploit information loaded.  "
                                       "Please try: elem refresh\n")
             sys.exit(1)
-        self.exploit_manager.score(edbid, version, score_kind, score)
+        self.exploit_manager.score(edbid, cpe, score_kind, score)
         self.exploit_manager.write(edbid)
 
     def assess(self):
@@ -179,7 +194,7 @@ class Elem(object):
                 for string in strings:
                     self.console_logger.info(string)
 
-    def copy(self, edbids, destination, stage=False):
+    def copy(self, edbids, destination, stage=False, cpe=''):
         try:
             self.exploit_manager.load_exploit_info()
         except OSError:
@@ -193,8 +208,10 @@ class Elem(object):
                              destination))
             shutil.copy(self.exploit_manager.exploits[edbid]['filename'],
                         destination)
-            if stage:
-                success, msg = self.exploit_manager.stage(edbid, destination)
+            if stage and cpe is not '':
+                success, msg = self.exploit_manager.stage(edbid,
+                                                          destination,
+                                                          cpe)
                 if success:
                     self.console_logger.info("Successfuly staged exploit %s" %
                                              (edbid))
@@ -202,6 +219,9 @@ class Elem(object):
                     self.console_logger.info("Unsuccessfuly staged exploit " +
                                              "%s with error message %s." %
                                              (edbid, str(msg)))
+            elif stage and cpe is '':
+                self.console_logger.warn("CPE is undefined so unable to "
+                                         "stage %s" % edbid)
 
     def patch(self, edbid):
         try:
@@ -229,7 +249,14 @@ class Elem(object):
             self.logger.error("\'assess\' may only be "
                               "run on an Enterprise Linux host.")
 
-    def set_stage_info(self, edbid, stage_info):
+    def set_stage_info(self, edbid, cpe, command, packages, services, selinux):
+
+        if not command and not packages and not services and not selinux:
+            self.console_logger.error("At least one of the following must"
+                                      "be specified for staging: command, "
+                                      "packages, services, selinux")
+            sys.exit(1)
+
         try:
             self.exploit_manager.load_exploit_info()
         except OSError:
@@ -237,7 +264,26 @@ class Elem(object):
                                       "Please try: elem refresh\n")
             sys.exit(1)
 
-        self.console_logger.info("Setting stage command for %s to %s." %
-                                 (edbid, stage_info))
-        self.exploit_manager.set_stage_info(edbid, stage_info)
-        self.exploit_manager.write(edbid)
+        if command:
+            self.console_logger.info("Setting stage command for %s to %s." %
+                                     (edbid, stage_info))
+            self.exploit_manager.set_stage_info(edbid, cpe, command)
+            self.exploit_manager.write(edbid)
+
+        if packages:
+            self.console_logger.info("Setting stage packages for %s to %s." %
+                                     (edbid, packages))
+            self.exploit_manager.add_packages(edbid, cpe, packages)
+            self.exploit_manager.write(edbid)
+
+        if services:
+            self.console_logger.info("Setting stage services for %s to %s." %
+                                     (edbid, services))
+            self.exploit_manager.add_services(edbid, cpe, services)
+            self.exploit_manager.write(edbid)
+
+        if selinux:
+            self.console_logger.info("Setting stage SELinux for %s to %s." %
+                                     (edbid, selinux))
+            self.exploit_manager.set_selinux(edbid, cpe, selinux)
+            self.exploit_manager.write(edbid)
