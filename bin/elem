@@ -96,7 +96,7 @@ def main():
                               help='Which exploit to score',
                               required=True,
                               type=str)
-    score_parser.add_argument('--version',
+    score_parser.add_argument('--cpe',
                               required=True,
                               type=str)
     score_parser.add_argument('--kind',
@@ -168,10 +168,29 @@ def main():
                              help="The edbid on which to set stage info",
                              required=True,
                              type=str)
-    set_stage_parser.add_argument('--stageinfo',
+    set_stage_parser.add_argument('--command',
                              help="The command used to stage the exploit",
-                             required=True,
+                             required=False,
                              type=str)
+    set_stage_parser.add_argument('--packages',
+                             help="The packages necessary to execute the exploit",
+                             required=False,
+                             nargs='*',
+                             type=str)
+    set_stage_parser.add_argument('--services',
+                             help="The services necessary to execute the exploit",
+                             required=False,
+                             nargs='*',
+                             type=str)
+    set_stage_parser.add_argument('--selinux',
+                             help="The SELinux state for succesful execution",
+                             choices=['permissive', 'enforcing'],
+                             required=False,
+                             type=str)
+    set_stage_parser.add_argument('--cpe',
+                              required=True,
+                              type=str)
+
 
     args = parser.parse_args()
     mapper = Elem(args)

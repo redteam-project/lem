@@ -32,7 +32,7 @@ class Elem(object):
                                self.args.cveid)
         elif hasattr(self.args, 'score'):
             self.score_exploit(self.args.edbid,
-                               self.args.version,
+                               self.args.cpe,
                                self.args.kind,
                                self.args.value)
         elif hasattr(self.args, 'assess'):
@@ -42,7 +42,12 @@ class Elem(object):
         elif hasattr(self.args, 'patch'):
             self.patch(self.args.edbid)
         elif hasattr(self.args, 'setstage'):
-            self.set_stage_info(self.args.edbid, self.args.stageinfo)
+            self.set_stage_info(self.args.edbid,
+                                self.args.cpe,
+                                self.args.command,
+                                self.args.packages,
+                                self.args.services,
+                                self.args.selinux)
 
     def refresh(self,
                 security_api_url,
@@ -137,7 +142,7 @@ class Elem(object):
 
     def score_exploit(self,
                       edbid,
-                      version,
+                      cpe,
                       score_kind,
                       score):
         try:
@@ -146,7 +151,7 @@ class Elem(object):
             self.console_logger.error("\nNo exploit information loaded.  "
                                       "Please try: elem refresh\n")
             sys.exit(1)
-        self.exploit_manager.score(edbid, version, score_kind, score)
+        self.exploit_manager.score(edbid, cpe, score_kind, score)
         self.exploit_manager.write(edbid)
 
     def assess(self):
@@ -236,7 +241,14 @@ class Elem(object):
             self.logger.error("\'assess\' may only be "
                               "run on an Enterprise Linux host.")
 
-    def set_stage_info(self, edbid, stage_info):
+    def set_stage_info(self, edbid, cpe, command, packages, services, selinux):
+
+        if not command and not packages and not services and not selinux:
+            self.console_logger.error("At least one of the following must"
+                                      "be specified for staging: command, "
+                                      "packages, services, selinux")
+            sys.exit(1)
+
         try:
             self.exploit_manager.load_exploit_info()
         except OSError:
@@ -244,7 +256,26 @@ class Elem(object):
                                       "Please try: elem refresh\n")
             sys.exit(1)
 
-        self.console_logger.info("Setting stage command for %s to %s." %
-                                 (edbid, stage_info))
-        self.exploit_manager.set_stage_info(edbid, stage_info)
-        self.exploit_manager.write(edbid)
+        if command:
+            self.console_logger.info("Setting stage command for %s to %s." %
+                                     (edbid, stage_info))
+            self.exploit_manager.set_stage_info(edbid, cpe, command)
+            self.exploit_manager.write(edbid)
+
+        if packages:
+            self.console_logger.info("Setting stage packages for %s to %s." %
+                                     (edbid, packages))
+            self.exploit_manager.add_packages(edbid, cpe, packages)
+            self.exploit_manager.write(edbid)
+
+        if services:
+            self.console_logger.info("Setting stage services for %s to %s." %
+                                     (edbid, services))
+            self.exploit_manager.add_services(edbid, cpe, services)
+            self.exploit_manager.write(edbid)
+
+        if selinux:
+            self.console_logger.info("Setting stage SELinux for %s to %s." %
+                                     (edbid, selinux))
+            self.exploit_manager.set_selinux(edbid, cpe, selinux)
+            self.exploit_manager.write(edbid)

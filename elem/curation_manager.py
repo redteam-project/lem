@@ -64,21 +64,64 @@ class ExploitManager(GitManager):
 
         return edbids
 
-    def score(self, edbid, version, score_kind, score):
-        if 'scores' not in self.exploits[edbid].keys():
-            self.exploits[edbid]['scores'] = dict()
+    def add_cpe(self, edbid, cpe):
+        if 'cpes' not in self.exploits[edbid].keys():
+            self.exploits[edbid]['cpes'] = dict()
 
-        if version not in self.exploits[edbid]['scores'].keys():
-            self.exploits[edbid]['scores'][version] = dict()
+        if cpe not in self.exploits[edbid]['cpes'].keys():
+            self.exploits[edbid]['cpes'][cpe] = dict()
+
+    def score(self, edbid, cpe, score_kind, score):
+        self.add_cpe(edbid, cpe)
+
+        if 'scores' not in self.exploits[edbid]['cpes'][cpe].keys():
+            self.exploits[edbid]['cpes'][cpe]['scores'] = dict()
 
         if score_kind not in \
-                self.exploits[edbid]['scores'][version].keys():
-            self.exploits[edbid]['scores'][version][score_kind] = dict()
+                self.exploits[edbid]['cpes'][cpe]['scores'].keys():
+            self.exploits[edbid]['cpes'][cpe]['scores'][score_kind] = dict()
 
-        self.exploits[edbid]['scores'][version][score_kind] = score
+        self.exploits[edbid]['cpes'][cpe]['scores'][score_kind] = score
 
-    def set_stage_info(self, edbid, stage_info):
-        self.exploits[edbid]['staging'] = stage_info
+    def set_stage_info(self, edbid, cpe, stage_info, kind=''):
+        self.add_cpe(edbid, cpe)
+
+        self.exploits[edbid]['cpes'][cpe]['staging'] = stage_info
+
+    def add_packages(self, edbid, cpe, packages):
+        self.add_cpe(edbid, cpe)
+
+        if 'packages' not in self.exploits[edbid]['cpes'][cpe].keys():
+            self.exploits[edbid]['cpes'][cpe]['packages'] = []
+
+        if isinstance(packages, str):
+            self.exploits[edbid]['cpes'][cpe]['packages'].append(packages)
+        elif isinstance(packages, list):
+            self.exploits[edbid]['cpes'][cpe]['packages'] = self.exploits[edbid]['cpes'][cpe]['packages'] + packages
+
+        self.exploits[edbid]['cpes'][cpe]['packages'] = \
+            list(set(self.exploits[edbid]['cpes'][cpe]['packages']))
+
+    def add_services(self, edbid, cpe, services):
+        self.add_cpe(edbid, cpe)
+
+        if 'services' not in self.exploits[edbid]['cpes'][cpe].keys():
+            self.exploits[edbid]['cpes'][cpe]['services'] = []
+
+        if isinstance(services, str):
+            self.exploits[edbid]['cpes'][cpe]['services'].append(services)
+        elif isinstance(services, list):
+            self.exploits[edbid]['cpes'][cpe]['services'] = self.exploits[edbid]['cpes'][cpe]['services'] + services
+
+        self.exploits[edbid]['cpes'][cpe]['services'] = \
+            list(set(self.exploits[edbid]['cpes'][cpe]['services']))
+
+    def set_selinux(self, edbid, cpe, selinux):
+        self.add_cpe(edbid, cpe)
+
+        if 'services' not in self.exploits[edbid]['cpes'][cpe].keys():
+            self.exploits[edbid]['cpes'][cpe]['selinux'] = selinux
+
 
     def stage(self, edbid, destination):
         if 'staging' not in self.exploits[edbid]:
@@ -103,35 +146,25 @@ class ExploitManager(GitManager):
 
     def get_exploit_strings(self, edbid):
         strings = []
-        if 'scores' not in self.exploits[edbid].keys():
+        if 'cpes' not in self.exploits[edbid].keys():
             for cve in self.exploits[edbid]['cves']:
                 string = edbid
                 string += ","
-                string += self.exploits[edbid]['filename']
-                string += ","
-                if 'staging' in self.exploits[edbid].keys():
-                    string += self.exploits[edbid]['staging']
-                    string += ","
                 string += cve
                 strings.append(string)
         else:
-            for ver in self.exploits[edbid]['scores'].keys():
-                for kind in self.exploits[edbid]['scores'][ver].keys():
+            for cpe in self.exploits[edbid]['cpes'].keys():
+                for kind in self.exploits[edbid]['cpes'][cpe]['scores'].keys():
                     for cve in self.exploits[edbid]['cves']:
                         string = edbid
                         string += ","
-                        string += self.exploits[edbid]['filename']
-                        string += ","
-                        if 'staging' in self.exploits[edbid].keys():
-                            string += self.exploits[edbid]['staging']
-                            string += ","
                         string += cve
                         string += ","
-                        string += ver
+                        string += cpe
                         string += ","
                         string += kind
                         string += ','
-                        string += self.exploits[edbid]['scores'][ver][kind]
+                        string += self.exploits[edbid]['cpes'][cpe]['scores'][kind]
                         strings.append(string)
 
         return strings
