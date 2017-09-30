@@ -266,7 +266,7 @@ class Elem(object):
 
         if command:
             self.console_logger.info("Setting stage command for %s to %s." %
-                                     (edbid, stage_info))
+                                     (edbid, command))
             self.exploit_manager.set_stage_info(edbid, cpe, command)
             self.exploit_manager.write(edbid)
 
