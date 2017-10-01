@@ -12,6 +12,35 @@ git clone --recursive https://github.com/fedoraredteam/elem
 ```
 pip install elem
 ```
+### Virtualenv
+You may find it useful to install and use **Virtualenv** to create an isolated Python environment for **elem**.
+```terminal
+sudo easy_install virtualenv
+virtualenv elem
+cd elem
+source bin/activate
+pip install elem
+```
+## General Usage
+![General Usage](https://github.com/fedoraredteam/elem/images/usage.png)
+1. **Install** - Feel free to use the instructions above.
+2. **Refresh** - Download content from **exploit-database** and **elem-curation**.
+```
+elem refresh
+```
+3. **Assess** - Under the hood, this invokes *yum updateinfo list cves*.  You do not have to be a privileged user to invoke this command.
+```
+elem assess
+```
+4. **Copy** - Copy an exploit to a destination directory and optionally **stage** the exploit if staging information is available.
+```
+elem copy --edbid 35370 --destination ~/ --stage
+```
+5. **Test** - Test the exploit on the target system.
+6. **Score** - Score the exploit.  Right now only the **STRIDE** scoring schema is allowed.
+```
+elem score --edbid 35370 --cpe cpe:/o:redhat:enterprise_linux:7.0:ga:server --kind stride --value 000009
+```
 ## Help
 ### General
 ```terminal
