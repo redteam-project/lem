@@ -22,7 +22,7 @@ source bin/activate
 pip install elem
 ```
 ## General Usage
-![General Usage](https://github.com/fedoraredteam/elem/images/usage.png)
+![General Usage](https://github.com/fedoraredteam/elem/blob/master/images/usage.png)
 1. **Install** - Feel free to use the instructions above.
 2. **Refresh** - Download content from **exploit-database** and **elem-curation**.
 ```
