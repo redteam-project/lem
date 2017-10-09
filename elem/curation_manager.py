@@ -5,15 +5,16 @@ from git_manager import GitManager
 import os
 import subprocess
 import logging
+import sys
 
-class ExploitManager(GitManager):
+class CurationManager(GitManager):
     def __init__(self, exploit_path,
                        exploits_repo,
-                       subfolder='/exploits'):
+                       subfolder='/exploit-database'):
 
-        super(ExploitManager, self).__init__(exploit_path,
-                                             exploits_repo,
-                                             'elem-curation')
+        super(CurationManager, self).__init__(exploit_path,
+                                              exploits_repo,
+                                              'elem-curation')
 
         self.logger = logging.getLogger('elem')
 
@@ -45,26 +46,22 @@ class ExploitManager(GitManager):
             edbid = root.replace(self.exploit_path + '/', "")
             self.exploits[edbid] = json.load(exploit_file)
 
-    def affects_el(self, edbid):
-        try:
-            for cveid in self.exploits[edbid]['cves'].keys():
-                if 'windows' in self.exploits[edbid]['filename']:
-                    return False
-                if self.exploits[edbid]['cves'][cveid]['rhapi']:
-                    return True
-        except KeyError:
-            pass
-        return False
-
     def exploits_by_cve(self, cveid):
         edbids = []
 
         for edbid in self.exploits.keys():
-            if cveid in self.exploits[edbid]['cves'] and \
-                    'windows' not in self.exploits[edbid]['filename']:
+            if self.exploit_affected_by_cves(edbid, cveid):
                 edbids.append(edbid)
 
         return edbids
+
+    def exploit_affected_by_cves(self, eid, cveids):
+        if not isinstance(cveids, list):
+            cveids = [cveids]
+        for cveid in cveids:
+            if cveid in self.exploits[eid]['cves']:
+                return True
+        return False
 
     def add_cpe(self, edbid, cpe):
         if 'cpes' not in self.exploits[edbid].keys():
@@ -130,11 +127,14 @@ class ExploitManager(GitManager):
             return False, "No staging information available."
 
         try:
-            command = self.exploits[edbid]['cpes'][cpe]['staging'].split(' ')
+            if isinstance(self.exploits[edbid]['cpes'][cpe]['staging'], list):
+                command = self.exploits[edbid]['cpes'][cpe]['staging']
+            else:
+                command = self.exploits[edbid]['cpes'][cpe]['staging'].split(' ')
             p = subprocess.Popen(command,
                                  stdout=subprocess.PIPE,
                                  stderr=subprocess.PIPE,
-                                 cwd=destination)
+                                 cwd=destination, shell=True)
             out, err = p.communicate()
             lines = out.split('\n')
             error_lines = err.split('\n')
