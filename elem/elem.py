@@ -1,297 +1,156 @@
-#!/usr/bin/python
-
-from exploit_source_manager import ExploitSourceManager
-from curation_manager import CurationManager
-from cve_manager import SecurityAPI
-
-import sys
-import subprocess
-import re
-import log
-import shutil
 import os
+import log
+import sys
+from vulnerability import VulnerabilityManager
+from host import YumAssessor
+from host import RpmAssessor
+from host import Patcher
+from score import ScoreManager
+from exploit import CurationManager
 
+from . import ElemConfiguration
 
 class Elem(object):
     def __init__(self, args):
         self.args = args
+        self.elem_conf = ElemConfiguration()
+        self.config = self.elem_conf.read_config()
+
         self.logger = log.setup_custom_logger('elem')
         self.console_logger = log.setup_console_logger('console')
+        self.vuln_manager = None
+        self.score_manager = None
 
-        self.exploitdb = ExploitSourceManager('exploit-database', 
-                                              self.args.exploitdb,
-                                              self.args.exploitdbrepo)
-        self.curation_manager = CurationManager(self.args.exploits,
-                                               self.args.exploitsrepo)
+    def configure_vulnerability_sources(self):
+        self.vuln_manager = VulnerabilityManager()
+
+        for section in self.config.sections():
+            section_pieces = section.split(":")
+            if section_pieces[0].startswith('securityapi'):
+                self.vuln_manager.add_api_source(section_pieces[1],
+                                                 self.config.get(section, 'location'),
+                                                 not self.args.notlsverify,
+                                                 os.path.join(self.elem_conf.path, self.config.get(section, 'cache_path')))
+
+            elif section_pieces[0].startswith('nvd'):
+                self.vuln_manager.add_nvd_source(section_pieces[1],
+                                                 self.config.get(section, 'location'),
+                                                 not self.args.notlsverify,
+                                                 os.path.joing(self.elem_conf.path, self.config.get(section, 'cache_path')))
+
+    def configure_score_managers(self):
+        self.score_manager = ScoreManager()
+        for section in self.config.sections():
+            section_pieces = section.split(":")
+            if section_pieces[0].startswith('score'):
+                self.score_manager.add_score(section_pieces[1],
+                                             self.config.get(section, 'pattern'),
+                                             self.config.get(section, 'example') or None)
 
     def run(self):
+        if self.args.which == 'cve':
+            self.process_cve()
+        elif self.args.which == 'host':
+            self.process_host()
+        elif self.args.which == 'score':
+            self.process_score()
+        elif self.args.which == 'exploit':
+            self.process_exploit()
 
-        if hasattr(self.args, 'cpe') and 'Not Defined' in self.args.cpe:
-            self.console_logger.error("CPE is required but not defined.")
+    def process_cve(self):
+        self.configure_vulnerability_sources()
+        for name, source in self.vuln_manager.readers.iteritems():
+            if self.args.names and name in self.args.names:
+                pass
 
-        if hasattr(self.args, 'refresh'):
-            self.refresh(self.args.securityapi, self.args.sslverify)
-        elif hasattr(self.args, 'list'):
-            self.list_exploits(self.args.edbid,
-                               self.args.cveid)
-        elif hasattr(self.args, 'score'):
-            self.score_exploit(self.args.edbid,
-                               self.args.cpe,
-                               self.args.kind,
-                               self.args.value)
-        elif hasattr(self.args, 'assess'):
-            self.assess()
-        elif hasattr(self.args, 'copy'):
-            self.copy(self.args.edbid, self.args.destination, self.args.stage, self.args.cpe)
-        elif hasattr(self.args, 'patch'):
-            self.patch(self.args.edbid)
-        elif hasattr(self.args, 'setstage'):
-            self.set_stage_info(self.args.edbid,
-                                self.args.cpe,
-                                self.args.command,
-                                self.args.packages,
-                                self.args.services,
-                                self.args.selinux)
+    def process_host(self):
+        if self.args.sub_which == 'assess':
+            self.process_assess()
+        if self.args.sub_which == 'patch':
+            self.process_patch()
 
-    def refresh(self,
-                security_api_url,
-                sslverify):
-        self.console_logger.info("Refresh ExploitDB Repository")
-        self.exploitdb.refresh_repository()
-        self.console_logger.info("Finished Refreshing ExploitDB Repository")
-        self.console_logger.info("Searching for CVE Information" +
-                                 " in Known Exploits")
-        self.exploitdb.refresh_exploits_with_cves()
-        self.console_logger.info("Finished Searching for CVE Information" +
-                                 " in Known Exploits")
-        self.console_logger.info("Refreshing Exploits Repository")
-        self.curation_manager.refresh_repository()
-        self.console_logger.info("Finished Refreshing Exploits Repository")
-        self.curation_manager.load_exploit_info()
-        self.console_logger.info("Reconcile Existing Data with Data "
-                                 "from ExploitDB")
-
-        # We will reconcile information from the exploit database with the
-        # existing exploit data.
-        for edbid in self.exploitdb.exploits.keys():
-            # Add an exploit if it doesn't exist
-            if edbid not in self.curation_manager.exploits.keys():
-                self.curation_manager.exploits[edbid] = dict(cves=[])
-                self.curation_manager.write(edbid)
-
-            if 'filename' not in self.curation_manager.exploits[edbid].keys():
-                self.curation_manager.exploits[edbid]['filename'] = ''
-
-            if self.curation_manager.exploits[edbid]['filename'] != \
-                self.exploitdb.exploits[edbid]['filename']:
-                self.curation_manager.exploits[edbid]['filename'] = \
-                self.exploitdb.exploits[edbid]['filename']
-                self.curation_manager.write(edbid)
-
-
-            # Ensure that all CVE's detected from exploit-db are present in
-            # curation information.
-            for cveid in self.exploitdb.exploits[edbid]['cves']:
-                if cveid not in \
-                        self.curation_manager.exploits[edbid]['cves']:
-                    self.curation_manager.exploits[edbid]['cves'].append(cveid)
-                    self.curation_manager.write(edbid)
-        self.console_logger.info("Finished Reconciling Existing Data With "
-                                 "Data from ExploitDB")
-        # Next, query the security API
-        #self.console_logger.info("Refresh Data from SecurityAPI")
-        #securityapi = SecurityAPI(security_api_url, sslverify)
-        #securityapi.refresh()
-
-        # Indicate whether a CVE was found in the security API or not
-        # for cve in securityapi.cve_list:
-        #     for edbid in self.curation_manager.exploits.keys():
-        #         if cve in self.curation_manager.exploits[edbid]['cves'].keys():
-        #             self.curation_manager.exploits[edbid]['cves'][cve]['rhapi'] = True
-        #             self.curation_manager.write(edbid)
-        # self.console_logger.info("Finished Refreshing Data from SecurityAPI")
-
-    def list_exploits(self, edbids_to_find=[], cveids_to_find=[]):
-        results = []
+    def process_assess(self):
+        curation_manager = CurationManager(self.args.curation)
+        if self.args.type == 'yum':
+            assessor = YumAssessor()
+        elif self.args.type == 'rpm':
+            assessor = RpmAssessor()
+    
         try:
-            self.curation_manager.load_exploit_info()
-        except OSError:
-            self.console_logger.error("\nNo exploit information loaded.  "
-                                      "Please try: elem refresh\n")
-            sys.exit(1)
+            assessor.assess()
+            self.console_logger.info(curation_manager.csv(cves=assessor.cves,
+                                                        source=self.args.source,
+                                                        score_kind=self.args.kind,
+                                                        score_regex=self.args.score,
+                                                        eid=self.args.id))
+        except OSError as error:
+            if error.errno == 2:
+                error.message = "Unable to execute assess.  This may not be an Enterprise Linux host."
+                self.console_logger.error(error.message)
+            else:
+                raise OSError(error.args)
 
-        for edbid_to_find in edbids_to_find:
-            results += self.curation_manager.get_exploit_strings(edbid_to_find)
-            
+    def process_patch(self):
+        curation_manager = CurationManager(self.args.curation)
+        cves = curation_manager.cves_from_exploits(self.args.source, self.args.ids)
+        patcher = Patcher(cves)
+        patcher.patch()
 
-        for cveid_to_find in cveids_to_find:
-            exploit_ids = self.curation_manager.exploits_by_cve(cveid_to_find)
-            for edbid in exploit_ids:
-                results += self.curation_manager.get_exploit_strings(edbid)
-            if len(exploit_ids) == 0:
-                self.console_logger.warn("There do not appear to be any "
-                                         "exploits that affect CVE %s."
-                                         % cveid_to_find)
 
-        if not edbids_to_find and not cveids_to_find:
-            for edbid in self.curation_manager.exploits.keys():
-                results += self.curation_manager.get_exploit_strings(edbid)
+    def process_score(self):
+        self.configure_score_managers()
+        if 'list' in self.args.sub_which:
+            self.console_logger.info(str(self.score_manager))
 
-        for line in results:
-            self.console_logger.info(line)
+    def process_exploit(self):
+        curation_manager = CurationManager(self.args.curation)
+        if 'reconcile' in self.args.sub_which:
+            curation_manager.add_source(self.args.source_name, self.args.source)
+            curation_manager.update_exploits(source_name=self.args.source_name,
+                                             all_exploits=self.args.all)
 
-        if len(results) == 0:
-            self.console_logger.warn("There do not appear to be any "
-                                     "exploit information available.  Please"
-                                     " try: elem refresh")
+        elif 'list' in self.args.sub_which:
+            self.console_logger.info(curation_manager.csv(source=self.args.source,
+                                                          cves=self.args.cves,
+                                                          cpes=self.args.cpes,
+                                                          score_kind=self.args.kind,
+                                                          eid=self.args.id,
+                                                          score_regex=self.args.score))
 
-    def score_exploit(self,
-                      edbid,
-                      cpe,
-                      score_kind,
-                      score):
-        try:
-            self.curation_manager.load_exploit_info()
-        except OSError:
-            self.console_logger.error("\nNo exploit information loaded.  "
-                                      "Please try: elem refresh\n")
-            sys.exit(1)
-        self.curation_manager.score(edbid, cpe, score_kind, score)
-        self.curation_manager.write(edbid)
+        elif 'score' in self.args.sub_which:
+            self.configure_score_managers()
+            if not self.args.kind in self.score_manager.scores.keys():
+                self.console_logger.error("Score kind {0} is not valid.  Please check {1}".format(self.args.kind, self.elem_conf.path))
+                sys.exit(1)
+            if not self.score_manager.is_valid(self.args.kind, self.args.value):
+                self.console_logger.error("Score value {0} is not valid.  Please check {1}".format(self.args.value, self.elem_conf.path))
+                sys.exit(1)
 
-    def assess(self):
-        assessed_cves = []
-        lines = []
-        error_lines = []
+            curation_manager.score(eid=self.args.id, 
+                                   source=self.args.source, 
+                                   cpe=self.args.cpe, 
+                                   kind=self.args.kind, 
+                                   value=self.args.value)
 
-        try:
-            self.curation_manager.load_exploit_info()
-        except OSError:
-            self.console_logger.error("\nNo exploit information loaded.  "
-                                      "Please try: elem refresh\n")
-            sys.exit(1)
+        elif 'configure' in self.args.sub_which:
+            if not self.args.command and not self.args.packages and not self.args.services and not self.args.selinux:
+                self.console_logger.error("At least one of the following must"
+                                        "be specified for staging: command, "
+                                        "packages, services, selinux")
+                sys.exit(1)
 
-        try:
-            command = ["yum", "updateinfo", "list", "cves"]
-            p = subprocess.Popen(command,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            lines = out.split('\n')
-            error_lines = err.split('\n')
-        except OSError:
-            self.logger.error("\'assess\' may only be "
-                              "run on an Enterprise Linux host.")
-            sys.exit(1)
-        pattern = re.compile('\s(.*CVE-\d{4}-\d{4,})')
-        for line in lines:
-            result = re.findall(pattern, line)
-            if result and result[0] not in assessed_cves:
-                assessed_cves.append(result[0])
+            curation_manager.set_stage(eid=self.args.id, 
+                                       source=self.args.source, 
+                                       cpe=self.args.cpe,
+                                       command=self.args.command,
+                                       selinux=self.args.selinux,
+                                       packages=self.args.packages,
+                                       services=self.args.services,
+                                       filename=self.args.filename)
 
-        assessed_cves = list(set(assessed_cves))
-        strings = []
-        for cveid in assessed_cves:
-            edbids = self.curation_manager.exploits_by_cve(cveid)
-            for edbid in edbids:
-                strings += self.curation_manager.get_exploit_strings(edbid)
-        for string in list(set(strings)):
-            self.console_logger.info(string)
-
-    def copy(self, edbids, destination, stage=False, cpe=''):
-        dirname = os.path.dirname(os.path.realpath(__file__))
-
-        try:
-            self.curation_manager.load_exploit_info()
-            #self.exploitdb.refresh_exploits_with_cves()
-        except OSError:
-            self.console_logger.error("\nNo exploit information loaded.  "
-                                      "Please try: elem refresh\n")
-            sys.exit(1)
-
-        for edbid in edbids:
-            self.console_logger.info("Copying from %s to %s." %
-                            (self.curation_manager.exploits[edbid]['filename'],
-                             destination))
-            fullpath = os.path.join(self.exploitdb.content_path,
-                                    self.curation_manager.exploits[edbid]['filename'])
-            shutil.copy(fullpath, destination)
-            if stage and cpe is not '':
-                success, msg = self.curation_manager.stage(edbid,
-                                                          destination,
-                                                          cpe)
-                if success:
-                    self.console_logger.info("Successfuly staged exploit %s" %
-                                             (edbid))
-                else:
-                    self.console_logger.info("Unsuccessfuly staged exploit " +
-                                             "%s with error message %s." %
-                                             (edbid, str(msg)))
-            elif stage and cpe is '':
-                self.console_logger.warn("CPE is undefined so unable to "
-                                         "stage %s" % edbid)
-
-    def patch(self, edbid):
-        try:
-            self.curation_manager.load_exploit_info()
-        except OSError:
-            self.console_logger.error("\nNo exploit information loaded.  "
-                                      "Please try: elem refresh\n")
-            sys.exit(1)
-        self.exploitdb.refresh_exploits_with_cves()
-        lines = []
-        error_lines = []
-        cves_to_patch = ','.join(self.exploitdb.exploits[edbid]['cves'])
-
-        try:
-            self.console_logger.info("Patching system for EDB ID %s with "
-                                     "CVE(s) %s." % (edbid, cves_to_patch))
-            command = ["yum", "update", "-y", "--cve", cves_to_patch]
-            p = subprocess.Popen(command,
-                                 stdout=subprocess.PIPE,
-                                 stderr=subprocess.PIPE)
-            out, err = p.communicate()
-            self.console_logger.info("Patching Completed.  A system restart" +
-                                     "may be necessary.")
-        except OSError:
-            self.logger.error("\'assess\' may only be "
-                              "run on an Enterprise Linux host.")
-
-    def set_stage_info(self, edbid, cpe, command, packages, services, selinux):
-
-        if not command and not packages and not services and not selinux:
-            self.console_logger.error("At least one of the following must"
-                                      "be specified for staging: command, "
-                                      "packages, services, selinux")
-            sys.exit(1)
-
-        try:
-            self.curation_manager.load_exploit_info()
-        except OSError:
-            self.console_logger.error("\nNo exploit information loaded.  "
-                                      "Please try: elem refresh\n")
-            sys.exit(1)
-
-        if command:
-            self.console_logger.info("Setting stage command for %s to %s." %
-                                     (edbid, command))
-            self.curation_manager.set_stage_info(edbid, cpe, command)
-            self.curation_manager.write(edbid)
-
-        if packages:
-            self.console_logger.info("Setting stage packages for %s to %s." %
-                                     (edbid, packages))
-            self.curation_manager.add_packages(edbid, cpe, packages)
-            self.curation_manager.write(edbid)
-
-        if services:
-            self.console_logger.info("Setting stage services for %s to %s." %
-                                     (edbid, services))
-            self.curation_manager.add_services(edbid, cpe, services)
-            self.curation_manager.write(edbid)
-
-        if selinux:
-            self.console_logger.info("Setting stage SELinux for %s to %s." %
-                                     (edbid, selinux))
-            self.curation_manager.set_selinux(edbid, cpe, selinux)
-            self.curation_manager.write(edbid)
+        elif 'copy' in self.args.sub_which:
+            curation_manager.copy(eid=self.args.id, 
+                                  source=self.args.source, 
+                                  cpe=self.args.cpe,
+                                  destination=self.args.destination,
+                                  stage=self.args.stage)

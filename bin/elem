@@ -1,16 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
+import os
 import sys
 import argparse
 sys.path.append("../")
-from elem.elem import Elem
-from distutils import sysconfig
-from os.path import expanduser
-
-sys.dont_write_bytecode = True
-red_hat_security_api = 'https://access.redhat.com/labs/securitydataapi'
-exploitdb_github = 'https://github.com/offensive-security/exploit-database.git'
-exploits_github = 'https://github.com/fedoraredteam/elem-curation.git'
+from elem import vulnerability
+from elem import Elem
 
 def read_cpe():
     file_name = '/etc/system-release-cpe'
@@ -20,194 +15,233 @@ def read_cpe():
     except IOError:
         return 'Not Detected'
 
-def str2bool(v):
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
-
 def main():
+    os.environ['PYTHONDONTWRITEBYTECODE'] = "1"
     parser = argparse.ArgumentParser(description='Cross Reference CVE\'s ' +
                                      'against a Exploit-DB entries for ' +
                                      'Enterprise Linux.')
 
-    parser.add_argument('--exploitdb',
-                        help='Exploit DB directory to search',
-                        required=False)
-    parser.add_argument('--exploitdbrepo',
-                        help='ExploitDB Git Repository Remote ',
-                        default=exploitdb_github,
-                        required=False)
-    parser.add_argument('--exploits',
-                        help='Directory to store exploit data',
-                        required=False)
-    parser.add_argument('--exploitsrepo',
-                        help='Exploits Git Repository Remote ',
-                        default=exploits_github,
-                        required=False)
-
     subparsers = parser.add_subparsers()
-    refresh_parser = subparsers.add_parser('refresh')
-    refresh_parser.add_argument('--refresh',
-                                required=False,
-                                type=str2bool,
-                                nargs='?',
-                                const=True,
-                                default='t',
-                                help=argparse.SUPPRESS)
-    refresh_parser.add_argument('--sslverify',
-                                required=False,
-                                type=str2bool,
-                                nargs='?',
-                                const=True,
-                                default='t',
-                                help='Use SSL when querying Security API\'s')
 
-    refresh_parser.add_argument('--securityapi',
-                                help='Red Hat Security API base URL.',
-                                required=False,
-                                default=red_hat_security_api)
+    # General Options
+    parser.add_argument('--notlsverify',
+                        required=False,
+                        action='store_true')
 
-    list_parser = subparsers.add_parser('list')
-    list_parser.add_argument('--list',
-                             required=False,
-                             type=str2bool,
-                             nargs='?',
-                             const=True,
-                             default='t',
-                             help=argparse.SUPPRESS)
-    list_parser.add_argument('--edbid',
-                             help="The edbid(s) on which to filter.",
-                             required=False,
-                             nargs='*',
-                             default=[],
-                             type=str)
-    list_parser.add_argument('--cveid',
-                             help="The CVE ID(s) on which to filter.",
-                             required=False,
-                             nargs='*',
-                             default=[],
-                             type=str)
+    # Vulnerability parsers
+    cve_parser = subparsers.add_parser('cve')
+    cve_parser.set_defaults(which='cve')
 
+    cve_parser.add_argument('--name',
+                            required=False,
+                            nargs='+',
+                            help='The name of the CVE source.')
+    cve_parser.add_argument('--update',
+                            required=False,
+                            action='store_true',
+                            help='Update data from CVE source.')
+
+    #Host Parser                        
+    host_parser = subparsers.add_parser('host')
+    host_parser.set_defaults(which='host')
+    host_subparsers = host_parser.add_subparsers()
+    host_assess_subparser = host_subparsers.add_parser('assess')
+    host_assess_subparser.set_defaults(sub_which='assess')
+
+    # Assessor parser
+    assess_group = host_assess_subparser.add_mutually_exclusive_group()
+    assess_group.add_argument('--yum', action='store_const', dest='type', const='yum', default='yum')
+    assess_group.add_argument('--rpm', action='store_const', dest='type', const='rpm')
+    host_assess_subparser.add_argument('--curation',
+                               required=True,
+                               help='Location of curation data.')
+    host_assess_subparser.add_argument('--source',
+                               required=False,
+                               default=None,
+                               help='Filter by exploit source.')
+    host_assess_subparser.add_argument('--kind',
+                               required=False,
+                               default=None,
+                               help='Filter by score kind.')
+    host_assess_subparser.add_argument('--score',
+                               required=False,
+                               default=None,
+                               help='A regex by which to filter the score.')
+    host_assess_subparser.add_argument('--id',
+                               required=False,
+                               default=None,
+                               help='Filter by exploit ID.')
+
+    host_patch_subparser = host_subparsers.add_parser('patch')
+    host_patch_subparser.set_defaults(sub_which='patch')
+    host_patch_subparser.add_argument('--curation',
+                                      required=True,
+                                      help='Location of curation data.')
+    host_patch_subparser.add_argument('--source',
+                                      required=True,
+                                      help='Exploit source.')
+    host_patch_subparser.add_argument('--ids',
+                                      required=True,
+                                      default=None,
+                                      nargs='*',
+                                      help='Exploit ID\'s patch')
+
+    # Score parser
     score_parser = subparsers.add_parser('score')
-    score_parser.add_argument('--score',
-                              required=False,
-                              type=str2bool,
-                              nargs='?',
-                              const=True,
-                              default='t',
-                              help=argparse.SUPPRESS)
-    score_parser.add_argument('--edbid',
-                              help='Which exploit to score',
-                              required=True,
-                              type=str)
-    score_parser.add_argument('--cpe',
-                              required=False,
-                              default=read_cpe(),
-                              type=str)
-    score_parser.add_argument('--kind',
-                              required=False,
-                              default='stride',
-                              choices=['stride', 'skipped'],
-                              help='Threat Score Kind',
-                              type=str)
-    score_parser.add_argument('--value',
-                              required=True,
-                              help='Threat Score',
-                              type=str)
+    score_parser.set_defaults(which='score')
+    score_subparsers = score_parser.add_subparsers()
+    score_list_parser = score_subparsers.add_parser('list')
+    score_list_parser.set_defaults(sub_which='list')
 
-    assess_parser = subparsers.add_parser('assess')
-    assess_parser.add_argument('--assess',
-                               required=False,
-                               type=str2bool,
-                               nargs='?',
-                               const=True,
-                               default='t',
-                               help=argparse.SUPPRESS)
+    # Exploit Parser
+    exploit_parser = subparsers.add_parser('exploit')
+    exploit_parser.set_defaults(which='exploit')
+    
+    
 
-    copy_parser = subparsers.add_parser('copy')
-    copy_parser.add_argument('--copy',
-                               required=False,
-                               type=str2bool,
-                               nargs='?',
-                               const=True,
-                               default='t',
-                               help=argparse.SUPPRESS)
-    copy_parser.add_argument('--destination',
-                              required=False,
-                              default=expanduser("~"),
-                              type=str)
-    copy_parser.add_argument('--edbid',
-                              help='Which exploit(s) to copy',
-                              required=True,
-                              nargs='*',
-                              type=str)
-    copy_parser.add_argument('--stage',
-                               required=False,
-                               type=str2bool,
-                               nargs='?',
-                               const=True,
-                               default='f')
-    copy_parser.add_argument('--cpe',
-                              required=False,
-                              default=read_cpe(),
-                              type=str)
-
-    patch_parser = subparsers.add_parser('patch')
-    patch_parser.add_argument('--patch',
+    exploit_subparsers = exploit_parser.add_subparsers()
+    exploit_list_parser = exploit_subparsers.add_parser('list')
+    exploit_list_parser.set_defaults(sub_which='list')
+    exploit_list_parser.add_argument('--source',
                              required=False,
-                             type=str2bool,
-                             nargs='?',
-                             const=True,
-                             default='t',
-                             help=argparse.SUPPRESS)
-    patch_parser.add_argument('--edbid',
-                             help="The edbid to patch",
-                             required=True,
-                             type=str)
-
-    set_stage_parser = subparsers.add_parser('setstage')
-    set_stage_parser.add_argument('--setstage',
+                             default=None,
+                             help='Filter by exploit source.')
+    exploit_list_parser.add_argument('--kind',
                              required=False,
-                             type=str2bool,
-                             nargs='?',
-                             const=True,
-                             default='t',
-                             help=argparse.SUPPRESS)
-    set_stage_parser.add_argument('--edbid',
-                             help="The edbid on which to set stage info",
-                             required=True,
-                             type=str)
-    set_stage_parser.add_argument('--command',
-                             help="The command used to stage the exploit",
+                             default=None,
+                             help='Filter by score kind.')
+    exploit_list_parser.add_argument('--score',
                              required=False,
-                             type=str)
-    set_stage_parser.add_argument('--packages',
-                             help="The packages necessary to execute the exploit",
+                             default=None,
+                             help='A regex by which to filter the score.')
+    exploit_list_parser.add_argument('--id',
+                             required=False,
+                             default=None,
+                             help='Filter by exploit ID.')
+    exploit_list_parser.add_argument('--cves',
                              required=False,
                              nargs='*',
-                             type=str)
-    set_stage_parser.add_argument('--services',
-                             help="The services necessary to execute the exploit",
+                             help='Filter by CVE.  Multiple CVE\'s can be specified')
+    exploit_list_parser.add_argument('--cpes',
                              required=False,
                              nargs='*',
-                             type=str)
-    set_stage_parser.add_argument('--selinux',
-                             help="The SELinux state for succesful execution",
-                             choices=['permissive', 'enforcing'],
-                             required=False,
-                             type=str)
-    set_stage_parser.add_argument('--cpe',
-                              required=False,
-                              default=read_cpe(),
-                              type=str)
+                             help='Filter by CPE.  Multiple CPE\'s can be specified')
+    exploit_list_parser.add_argument('--curation',
+                                required=True,
+                                help='Location of curation data.')
 
+    exploit_reconcile_parser = exploit_subparsers.add_parser('reconcile')
+    exploit_reconcile_parser.set_defaults(sub_which='reconcile')
+    exploit_reconcile_parser.add_argument('--all',
+                                          required=False,
+                                          action='store_true',
+                                          help='Update all exploits, as opposed to only adding information for new exploits')
+    exploit_reconcile_parser.add_argument('--source',
+                                          required=True,
+                                          help='Location of source of exploits.')
+    exploit_reconcile_parser.add_argument('--source-name',
+                                          required=True,
+                                          help='The name of the exploit source.')
+    exploit_reconcile_parser.add_argument('--curation',
+                                required=True,
+                                help='Location of curation data.')
 
+    exploit_score_parser = exploit_subparsers.add_parser('score')
+    exploit_score_parser.set_defaults(sub_which='score')
+    exploit_score_parser.add_argument('--id',
+                                      required=True,
+                                      help='Exploit ID to score.')
+    exploit_score_parser.add_argument('--source',
+                                      required=True,
+                                      help='Name of the exploit source.')
+    exploit_score_parser.add_argument('--cpe',
+                                      required=False,
+                                      default=read_cpe(),
+                                      type=str,
+                                      help='The CPE of the system on which this exploit was tested.')
+    exploit_score_parser.add_argument('--kind',
+                                      required=True,
+                                      help='Threat Score Kind',
+                                      type=str)
+    exploit_score_parser.add_argument('--value',
+                                      required=True,
+                                      help='Threat Score',
+                                      type=str)
+    exploit_score_parser.add_argument('--curation',
+                                      required=True,
+                                      help='Location of curation data.')
+
+    exploit_configure_parser = exploit_subparsers.add_parser('configure')
+    exploit_configure_parser.set_defaults(sub_which='configure')
+    exploit_configure_parser.add_argument('--id',
+                                          help="The exploit ID on which to set stage info",
+                                          required=True,
+                                          type=str)
+    exploit_configure_parser.add_argument('--source',
+                                          required=True,
+                                          help='Name of the exploit source.')
+    exploit_configure_parser.add_argument('--command',
+                                          help="The command used to stage the exploit",
+                                          required=False,
+                                          type=str)
+    exploit_configure_parser.add_argument('--packages',
+                                          help="The packages necessary to execute the exploit",
+                                          required=False,
+                                          nargs='*',
+                                          type=str)
+    exploit_configure_parser.add_argument('--services',
+                                          help="The services necessary to execute the exploit",
+                                          required=False,
+                                          nargs='*',
+                                          type=str)
+    exploit_configure_parser.add_argument('--selinux',
+                                          help="The SELinux state for succesful execution",
+                                          choices=['permissive', 'enforcing'],
+                                          required=False,
+                                          type=str)
+    exploit_configure_parser.add_argument('--cpe',
+                                          required=False,
+                                          default=read_cpe(),
+                                          type=str)
+    exploit_configure_parser.add_argument('--curation',
+                                          required=True,
+                                          help='Location of curation data.')
+    exploit_configure_parser.add_argument('--filename',
+                                          required=True,
+                                          help='Name of the destination file.  Paths will be stripped.  Used for copying.')
+    
+    exploit_copy_parser = exploit_subparsers.add_parser('copy')
+    exploit_copy_parser.set_defaults(sub_which='copy')
+    exploit_copy_parser.add_argument('--id',
+                                     help="The exploit ID on which to set stage info",
+                                     required=True,
+                                     type=str)
+    exploit_copy_parser.add_argument('--source',
+                                     required=True,
+                                     help='Name of the exploit source.')
+    exploit_copy_parser.add_argument('--cpe',
+                                     required=False,
+                                     default=read_cpe(),
+                                     type=str)
+    exploit_copy_parser.add_argument('--destination',
+                                     required=False,
+                                     default=os.path.expanduser("~"),
+                                     type=str)
+    exploit_copy_parser.add_argument('--stage',
+                                     required=False,
+                                     action='store_true')
+    exploit_copy_parser.add_argument('--curation',
+                                     required=True,
+                                     help='Location of curation data.')
+    
+
+    
+
+    
     args = parser.parse_args()
-    mapper = Elem(args)
-    mapper.run()
+    elem = Elem(args)
+    elem.run()
+
 
 if __name__ == "__main__":
     main()
