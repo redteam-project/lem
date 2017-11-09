@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/env python
 
 import sys
 import argparse
@@ -19,14 +19,6 @@ def read_cpe():
             return cpe_file.read().replace('\n','')
     except IOError:
         return 'Not Detected'
-
-def str2bool(v):
-    if v.lower() in ('yes', 'true', 't', 'y', '1'):
-        return True
-    elif v.lower() in ('no', 'false', 'f', 'n', '0'):
-        return False
-    else:
-        raise argparse.ArgumentTypeError('Boolean value expected.')
 
 def main():
     parser = argparse.ArgumentParser(description='Cross Reference CVE\'s ' +
@@ -52,17 +44,13 @@ def main():
     refresh_parser = subparsers.add_parser('refresh')
     refresh_parser.add_argument('--refresh',
                                 required=False,
-                                type=str2bool,
-                                nargs='?',
-                                const=True,
-                                default='t',
+                                action='store_true',
+                                dest='refresh',
                                 help=argparse.SUPPRESS)
     refresh_parser.add_argument('--sslverify',
                                 required=False,
-                                type=str2bool,
-                                nargs='?',
-                                const=True,
-                                default='t',
+                                action='store_true',
+                                dest='sslverify',
                                 help='Use SSL when querying Security API\'s')
 
     refresh_parser.add_argument('--securityapi',
@@ -73,10 +61,8 @@ def main():
     list_parser = subparsers.add_parser('list')
     list_parser.add_argument('--list',
                              required=False,
-                             type=str2bool,
-                             nargs='?',
-                             const=True,
-                             default='t',
+                             action='store_true',
+                             dest='list',
                              help=argparse.SUPPRESS)
     list_parser.add_argument('--edbid',
                              help="The edbid(s) on which to filter.",
@@ -94,10 +80,8 @@ def main():
     score_parser = subparsers.add_parser('score')
     score_parser.add_argument('--score',
                               required=False,
-                              type=str2bool,
-                              nargs='?',
-                              const=True,
-                              default='t',
+                              action='store_true',
+                              dest='score',
                               help=argparse.SUPPRESS)
     score_parser.add_argument('--edbid',
                               help='Which exploit to score',
@@ -121,19 +105,15 @@ def main():
     assess_parser = subparsers.add_parser('assess')
     assess_parser.add_argument('--assess',
                                required=False,
-                               type=str2bool,
-                               nargs='?',
-                               const=True,
-                               default='t',
+                               action='store_true',
+                               dest='assess',
                                help=argparse.SUPPRESS)
 
     copy_parser = subparsers.add_parser('copy')
     copy_parser.add_argument('--copy',
                                required=False,
-                               type=str2bool,
-                               nargs='?',
-                               const=True,
-                               default='t',
+                               action='store_true',
+                               dest='copy',
                                help=argparse.SUPPRESS)
     copy_parser.add_argument('--destination',
                               required=False,
@@ -146,10 +126,7 @@ def main():
                               type=str)
     copy_parser.add_argument('--stage',
                                required=False,
-                               type=str2bool,
-                               nargs='?',
-                               const=True,
-                               default='f')
+                               action='store_true')
     copy_parser.add_argument('--cpe',
                               required=False,
                               default=read_cpe(),
@@ -158,10 +135,8 @@ def main():
     patch_parser = subparsers.add_parser('patch')
     patch_parser.add_argument('--patch',
                              required=False,
-                             type=str2bool,
-                             nargs='?',
-                             const=True,
-                             default='t',
+                             action='store_true',
+                             dest='patch',
                              help=argparse.SUPPRESS)
     patch_parser.add_argument('--edbid',
                              help="The edbid to patch",
@@ -171,10 +146,8 @@ def main():
     set_stage_parser = subparsers.add_parser('setstage')
     set_stage_parser.add_argument('--setstage',
                              required=False,
-                             type=str2bool,
-                             nargs='?',
-                             const=True,
-                             default='t',
+                             action='store_true',
+                             dest='setstage',
                              help=argparse.SUPPRESS)
     set_stage_parser.add_argument('--edbid',
                              help="The edbid on which to set stage info",
