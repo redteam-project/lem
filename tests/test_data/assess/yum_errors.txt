@@ -1,0 +1,4 @@
+Repo rhel-7-server-rpms forced skip_if_unavailable=True due to: /etc/rhsm/ca/redhat-uep.pem
+Repo rhel-7-server-rpms forced skip_if_unavailable=True due to: /etc/pki/entitlement/932571779764819529-key.pem
+https://cdn.redhat.com/content/dist/rhel/server/7/7Server/x86_64/os/repodata/repomd.xml: [Errno 14] curl#77 - "<Unknown>"
+Trying other mirror.
