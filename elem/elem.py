@@ -64,10 +64,19 @@ class Elem(object):
                 pass
 
     def process_host(self):
-        if self.args.sub_which == 'assess':
-            self.process_assess()
-        if self.args.sub_which == 'patch':
-            self.process_patch()
+        try:
+            if self.args.sub_which == 'assess':
+                self.process_assess()
+            if self.args.sub_which == 'patch':
+                self.process_patch()
+        except OSError as oserror:
+            if oserror.errno == 2:
+                self.console_logger.error("\nUnable to execute %s.  The patch or assess subcommands may only "
+                                          "be run on an enterprise Linux host.", self.args.sub_which)
+            elif oserror.errno == 1:
+                self.console_logger.error("\nUnable to execute %s.  Please ensure you have the permissions to do so.", self.args.sub_which)
+            else:
+                raise OSError(oserror.args)
 
     def process_assess(self):
         curation_manager = CurationManager(self.args.curation)
@@ -75,26 +84,19 @@ class Elem(object):
             assessor = YumAssessor()
         elif self.args.type == 'rpm':
             assessor = RpmAssessor()
-    
-        try:
             assessor.assess()
-            self.console_logger.info(curation_manager.csv(cves=assessor.cves,
-                                                        source=self.args.source,
-                                                        score_kind=self.args.kind,
-                                                        score_regex=self.args.score,
-                                                        eid=self.args.id))
-        except OSError as error:
-            if error.errno == 2:
-                error.message = "Unable to execute assess.  This may not be an Enterprise Linux host."
-                self.console_logger.error(error.message)
-            else:
-                raise OSError(error.args)
-
+        self.console_logger.info(curation_manager.csv(cves=assessor.cves,
+                                                    source=self.args.source,
+                                                    score_kind=self.args.kind,
+                                                    score_regex=self.args.score,
+                                                    eid=self.args.id))
     def process_patch(self):
-        curation_manager = CurationManager(self.args.curation)
-        cves = curation_manager.cves_from_exploits(self.args.source, self.args.ids)
-        patcher = Patcher(cves)
-        patcher.patch()
+        if self.args.sub_sub_which == 'exploits':
+            curation_manager = CurationManager(self.args.curation)
+            cves = curation_manager.cves_from_exploits(self.args.source, self.args.ids)
+            Patcher.patch(cves)
+        elif self.args.sub_sub_which == 'all':
+            Patcher.patch()
 
 
     def process_score(self):

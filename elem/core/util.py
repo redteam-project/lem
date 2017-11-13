@@ -4,7 +4,6 @@ import StringIO
 import os
 import json
 import requests
-import csv
 
 def open_from_url(location, tlsverify=True):
     response = requests.get(location, verify=tlsverify, stream=True)

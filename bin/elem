@@ -41,14 +41,14 @@ def main():
                             action='store_true',
                             help='Update data from CVE source.')
 
-    #Host Parser                        
+    # Host Parser                        
     host_parser = subparsers.add_parser('host')
     host_parser.set_defaults(which='host')
     host_subparsers = host_parser.add_subparsers()
     host_assess_subparser = host_subparsers.add_parser('assess')
     host_assess_subparser.set_defaults(sub_which='assess')
 
-    # Assessor parser
+    ## Assessor parser
     assess_group = host_assess_subparser.add_mutually_exclusive_group()
     assess_group.add_argument('--yum', action='store_const', dest='type', const='yum', default='yum')
     assess_group.add_argument('--rpm', action='store_const', dest='type', const='rpm')
@@ -72,19 +72,28 @@ def main():
                                default=None,
                                help='Filter by exploit ID.')
 
+    ## Host Patch Parser
     host_patch_subparser = host_subparsers.add_parser('patch')
     host_patch_subparser.set_defaults(sub_which='patch')
-    host_patch_subparser.add_argument('--curation',
-                                      required=True,
-                                      help='Location of curation data.')
-    host_patch_subparser.add_argument('--source',
-                                      required=True,
-                                      help='Exploit source.')
-    host_patch_subparser.add_argument('--ids',
-                                      required=True,
-                                      default=None,
-                                      nargs='*',
-                                      help='Exploit ID\'s patch')
+    host_patch_subparser_subparsers = host_patch_subparser.add_subparsers()
+    ### Host Patch Exploit Parser
+    host_patch_exploit_subparser = host_patch_subparser_subparsers.add_parser('exploits')
+    host_patch_exploit_subparser.set_defaults(sub_sub_which='exploits')
+
+    host_patch_exploit_subparser.add_argument('--curation',
+                                              required=True,
+                                              help='Location of curation data.')
+    host_patch_exploit_subparser.add_argument('--source',
+                                              required=True,
+                                              help='Exploit source.')
+   
+    host_patch_exploit_subparser.add_argument('--ids',
+                                              default=None,
+                                              nargs='*',
+                                              help='Exploit ID\'s patch')
+    ### Host Patch All Parser
+    host_patch_all_subparser = host_patch_subparser_subparsers.add_parser('all')
+    host_patch_all_subparser.set_defaults(sub_sub_which='all')
 
     # Score parser
     score_parser = subparsers.add_parser('score')
