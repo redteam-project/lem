@@ -1,19 +1,34 @@
 # Elem
-Python Enterprise Linux Exploit Mapper
-## Background
-The objective of the **elem** tool is to assist with assessments known exploits on an enterprise Linux host.  Initially the [STRIDE](https://msdn.microsoft.com/en-us/library/ee823878%28v=cs.20%29.aspx) threat scoring model will be used though this tool is designed to support additional models.
+Welcome to the Enterprise Linux Exploit Mapper.  The purpose of the **elem** tool is to assist with assessments known exploits on an enterprise Linux host.  Initially the [STRIDE](https://msdn.microsoft.com/en-us/library/ee823878%28v=cs.20%29.aspx) threat scoring model will be used though this tool is designed to support additional models.
+
+## Requirements
+There are two components necessary to use all the features of **elem**.
+1. The **elem** repository: https://github.com/fedoraredteam/elem
+1. The curation information stored in the **elem-curation** repository: https://github.com/fedoraredteam/elem-curation
+
+The current version of **elem** requires that the curation repository be cloned separately.  The rationale is that because exploit POC's are now included with the curation data, the act of downloading the exploits to a host must be due to a conscious and deliberate act by the user.  For more information as to what information is stored in the curation repo, please see the **elem-curation** README.md.
+
 ## Getting Started
-There are a couple of ways to get started.  Clone the Repository or PIP.
-### Clone the Repository
+
+### Obtain the Curation Data
+We recommend cloning the data via git.
+```terminal
+git clone https://github.com/fedoraredteam/elem-curation.git
 ```
-git clone --recursive https://github.com/fedoraredteam/elem
+You'll need to note the location. ;-)
+
+### Install the ELEM tool
+There are a couple ways to accomplish this.  First is to clone via git.  The second is to insall bia Pypi.  We recommend that latter as **elem** has some dependencies that will automatically be installed via **pip**.  Furthermore, we recommend the use of Python Virtualenv.  This will ensure that **elem** is installed in an isolated Python environment.
+
+#### Clone the Repository
+```terminal
+git clone https://github.com/fedoraredteam/elem
 ```
-### Python PIP
-```
+#### Pypi
+```terminal
 pip install elem
 ```
-### Virtualenv
-You may find it useful to install and use **Virtualenv** to create an isolated Python environment for **elem**.
+#### Virtualenv
 ```terminal
 sudo easy_install virtualenv
 virtualenv elem
@@ -21,93 +36,63 @@ cd elem
 source bin/activate
 pip install elem
 ```
-## General Usage
-![General Usage](https://github.com/fedoraredteam/elem/blob/master/images/usage.png)
-1. **Install** - Feel free to use the instructions above.
-2. **Refresh** - Download content from **exploit-database** and **elem-curation**.
-```
-elem refresh
-```
-3. **Assess** - Under the hood, this invokes *yum updateinfo list cves*.  You do not have to be a privileged user to invoke this command.
-```
-elem assess
-```
-4. **Copy** - Copy an exploit to a destination directory and optionally **stage** the exploit if staging information is available.
-```
-elem copy --edbid 35370 --destination ~/ --stage
-```
-5. **Test** - Test the exploit on the target system.
-6. **Score** - Score the exploit.  Right now only the **STRIDE** scoring schema is allowed.
-```
-elem score --edbid 35370 --cpe cpe:/o:redhat:enterprise_linux:7.0:ga:server --kind stride --value 000009
-```
-## Help
-### General
+**NOTE** This is a known issue in Python 2.6 where the version of **wheel** causes some conflicts.  This can be resolved with:
 ```terminal
-usage: elem [-h] [--exploitdb EXPLOITDB] [--exploits EXPLOITS]
-            {refresh,list,score,assess} ...
+pip install wheel==0.29.0
+```
+## General Usage
+Executing **elem** with the ***--help*** argument will provide some basic guidance.
+```terminal
+(elem) [admin@localhost elem]$ elem --help
+usage: elem [-h] [--notlsverify] {host,cve,score,exploit} ...
 
 Cross Reference CVE's against a Exploit-DB entries for Enterprise Linux.
 
 positional arguments:
-  {refresh,list,score,assess}
+  {host,cve,score,exploit}
 
 optional arguments:
   -h, --help            show this help message and exit
-  --exploitdb EXPLOITDB
-                        Exploit DB directory to search
-  --exploits EXPLOITS   Directory to store exploit data
+  --notlsverify
 ```
-### Refresh Local Information
+### Assessing a Host
+The first action you probably want to perform is an assessment.  This is acheived with the **host** subcommand.  The only required argument here is the location of the curation data.  For example:
 ```terminal
-usage: elem refresh [-h] [--securityapi SECURITYAPI]
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --securityapi SECURITYAPI
-                        Red Hat Security API base URL.
+(elem) [admin@localhost elem]$ elem host assess --curation /home/admin/elem-curation
 ```
-### List Curated Exploits
-```terminal
-usage: elem list [-h] [--edbid EDBID]
-
-optional arguments:
-  -h, --help     show this help message and exit
-  --edbid EDBID  The edbid on which to filter.
+By default, this will result in a comma separated value list of exploits based on the CVE's applicable to the host.  For example:
 ```
-### Score an Exploit
-```terminal
-usage: elem score [-h] --edbid EDBID --version VERSION [--kind {stride}]
-                  --value VALUE
-
-optional arguments:
-  -h, --help         show this help message and exit
-  --edbid EDBID      Which exploit to score
-  --version VERSION
-  --kind {stride}    Threat Score Kind
-  --value VALUE      Threat Score
+exploit-database,40003,CVE-2016-0728,cpe:/o:redhat:enterprise_linux:7.0:ga:server,stride,000000
+exploit-database,1602
 ```
-### Assess an Enterprise Linux Host for CVE's and Mapped Exploits
-```terminal
-usage: elem assess [-h]
+The values are as follows:
+1. Source of the exploit
+2. Source specific identifier
+3. Applicable CVE (only listed if exploit hsa been scored)
+4. CPE against which the exploit was tested (only listed if exploit hsa been scored)
+5. Score name (only listed if exploit hsa been scored)
+6. Score value (only listed if exploit hsa been scored)
 
-optional arguments:
-  -h, --help  show this help message and exit
+#### Filtering Assessment Results
+It is possible to filter the results of **elem host assess** by certain values.  For example, perhaps we want to only list results where the efficacy of a privilage escallation exploit is very high.  The following would help us achieve this:
+```terminal
+(elem) [admin@localhost elem]$ elem host assess --curation /mnt/hgfs/elem-curation/ --kind stride --score 00000[8,9]
 ```
-### Copy an Exploit to a Directory for Testing
+### Testing an Exploit
+The next major step is to test an exploit on a host.  For this, we use the **exploit** subcommand.
+#### Copy the Exploit to a Location on the Host
+The **elem exploit copy** command will copy an exploit to the user's home directory by default:
 ```terminal
-usage: elem copy [-h] [--destination DESTINATION] --edbid EDBID
-
-optional arguments:
-  -h, --help            show this help message and exit
-  --destination DESTINATION
-  --edbid EDBID         Which exploit to copy
+elem exploit copy --source exploit-database --id 37706 --curation /mnt/hgfs/elem-curation/
 ```
-### Path the System Against an Exploit
+From here, you can examine the exploit file and manually stage it.  If the staging information is configured, the **--stage** will take the necessary actions to prepare the exploit for execution.
+#### Score the Exploit
+While not required, you may wish to score the exploit.
 ```terminal
-usage: elem patch [-h] [--edbid EDBID]
-
-optional arguments:
-  -h, --help     show this help message and exit
-  --edbid EDBID  The edbid to patch
+(elem) [admin@localhost elem]$ elem exploit score --id 37706 --source exploit-database --kind stride --value 000009 --curation /mnt/hgfs/elem-curation/
+```
+### Patching a Host
+In testing an exploit, it may be useful to test the exploit against a host that has been patched.  The elem tool assists with this, though this must be executed with escallated privileges.  We return to the **elem host** command/sub-command and use the **patch** sub-sub-command:
+```terminal
+(elem) [root@localhost elem]# elem host patch exploits --curation /mnt/hgfs/elem-curation/ --source exploit-database --ids 37706
 ```
