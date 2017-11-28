@@ -40,8 +40,7 @@ class Rpm(object):
     target_sw_re = re.compile(r'(el\d)')
     version_re = re.compile(r'-(\d.+)-')
     update_re = re.compile(r'-(\d+).\D')
-    # TODO: This needs fixing
-    name_re = re.compile(r'^([0-9a-zA-Z-]+)(?=-\d)')
+    name_re = re.compile(r'^([\w]+[-\D]*)(?=-\d)')
 
     def __init__(self, rpm):
         self.rpm = rpm
