@@ -24,6 +24,7 @@ class ElemConfiguration(object):
         dir_path = os.path.dirname(os.path.realpath(__file__))
         source_config = os.path.join(dir_path, 'config', 'elem.conf')
         if not os.path.isfile(self.file):
+            print "{0} doesn't exist".format(self.file)
             shutil.copy(source_config, self.file)
         #End workaround for funky
 

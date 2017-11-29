@@ -32,12 +32,6 @@ class Elem(object):
                                                  not self.args.notlsverify,
                                                  os.path.join(self.elem_conf.path, self.config.get(section, 'cache_path')))
 
-            elif section_pieces[0].startswith('nvd'):
-                self.vuln_manager.add_nvd_source(section_pieces[1],
-                                                 self.config.get(section, 'location'),
-                                                 not self.args.notlsverify,
-                                                 os.path.joing(self.elem_conf.path, self.config.get(section, 'cache_path')))
-
     def configure_score_managers(self):
         self.score_manager = ScoreManager()
         for section in self.config.sections():
@@ -61,7 +55,15 @@ class Elem(object):
         self.configure_vulnerability_sources()
         for name, source in self.vuln_manager.readers.iteritems():
             if self.args.names and name in self.args.names:
-                pass
+                if self.args.update:
+                    source.update_cves()
+                else:
+                    self.console_logger.info(str(source))
+            else:
+                if self.args.update:
+                    source.update_cves()
+                else:
+                    self.console_logger.info(str(source))
 
     def process_host(self):
         try:
@@ -80,16 +82,19 @@ class Elem(object):
 
     def process_assess(self):
         curation_manager = CurationManager(self.args.curation)
+        self.configure_vulnerability_sources()
         if self.args.type == 'yum':
             assessor = YumAssessor()
         elif self.args.type == 'rpm':
-            assessor = RpmAssessor()
-            assessor.assess()
+            cves, _ = self.vuln_manager.list_cves()
+            assessor = RpmAssessor(cves)
+        assessor.assess()
         self.console_logger.info(curation_manager.csv(cves=assessor.cves,
-                                                    source=self.args.source,
-                                                    score_kind=self.args.kind,
-                                                    score_regex=self.args.score,
-                                                    eid=self.args.id))
+                                                      source=self.args.source,
+                                                      score_kind=self.args.kind,
+                                                      score_regex=self.args.score,
+                                                      eid=self.args.id))
+                                                      
     def process_patch(self):
         if self.args.sub_sub_which == 'exploits':
             curation_manager = CurationManager(self.args.curation)

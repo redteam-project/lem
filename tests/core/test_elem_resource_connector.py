@@ -5,7 +5,8 @@ import gzip
 import StringIO
 import mock
 from elem.core import ElemResource
-from elem.core import decode_compressed_content
+from elem.core import ElemResourceConnectorFactory
+from elem.core import HttpResourceConnector
 
 class TestResource(unittest.TestCase):
 
@@ -15,28 +16,24 @@ class TestResource(unittest.TestCase):
                                            'test_data')
     def test_is_not_url(self):
         file_resource = os.path.join(self.test_data_path, 'nvdcve-1.0-2016.json.gz')
-        resource = ElemResource(file_resource)
-        self.assertFalse(resource.location_is_url())
+        self.assertFalse(ElemResourceConnectorFactory.location_is_url(file_resource))
 
     def test_is_url(self):
         url_resource = 'https://access.redhat.com/labs/securitydataapi/cves.json'
-        resource = ElemResource(url_resource)
-        self.assertTrue(resource.location_is_url())
+        self.assertTrue(ElemResourceConnectorFactory.location_is_url(url_resource))
 
         update_url = 'https://access.redhat.com/labs/securitydataapi/cves.json?after=2017-10-17'
-        resource = ElemResource(update_url)
-        self.assertTrue(resource.location_is_url())
+        self.assertTrue(ElemResourceConnectorFactory.location_is_url(update_url))
         
         test_archive = 'https://static.nvd.nist.gov/feeds/json/cve/1.0/nvdcve-1.0-2016.json.gz'
-        resource = ElemResource(test_archive)
-        self.assertTrue(resource.location_is_url())
+        self.assertTrue(ElemResourceConnectorFactory.location_is_url(test_archive))
 
     def test_decode_compressed_content(self):
         fgz = StringIO.StringIO()
         gzip_obj = gzip.GzipFile(filename='test.gz', mode='wb', fileobj=fgz)
         gzip_obj.write("Test String")
         gzip_obj.close()
-        data = decode_compressed_content(fgz.getvalue())
+        data = HttpResourceConnector._decode_compressed_content(fgz.getvalue())
         self.assertEqual("Test String", data)
 
     def test_open_text_from_compressed_file(self):
@@ -85,7 +82,7 @@ class TestResource(unittest.TestCase):
         self.assertEqual(json.loads("{ \"name\":\"John\", \"age\":31, \"city\":\"New York\" }"), data)
 
 
-    @mock.patch('elem.core.util.decode_compressed_content')
+    @mock.patch('elem.core.HttpResourceConnector._decode_compressed_content')
     @mock.patch('requests.get')
     def test_compressed_text_from_url(self, mock_url_call, mock_gzip_read):
         mock_gzip_read.return_value = "Hello World"
@@ -95,7 +92,7 @@ class TestResource(unittest.TestCase):
         data = resource.read()
         self.assertEqual("Hello World", data)
 
-    @mock.patch('elem.core.util.decode_compressed_content')
+    @mock.patch('elem.core.HttpResourceConnector._decode_compressed_content')
     @mock.patch('requests.get')
     def test_compressed_json_from_url(self, mock_url_call, mock_gzip_read):
         mock_gzip_read.return_value = "{ \"name\":\"John\", \"age\":31, \"city\":\"New York\" }"

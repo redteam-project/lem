@@ -32,7 +32,7 @@ def main():
     cve_parser = subparsers.add_parser('cve')
     cve_parser.set_defaults(which='cve')
 
-    cve_parser.add_argument('--name',
+    cve_parser.add_argument('--names',
                             required=False,
                             nargs='+',
                             help='The name of the CVE source.')
