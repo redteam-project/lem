@@ -44,7 +44,7 @@ setup(name='elem',
       author_email='kevensen@redhat.com',
       license='GPLv3',
       url='https://github.com/fedoraredteam/elem',
-      download_url='https://github.com/fedoraredteam/elem/archive/0.2.2.tar.gz',
+      download_url='https://github.com/fedoraredteam/elem/archive/0.2.3.tar.gz',
       keywords=['cve', 'exploit', 'linux'],
       classifiers=[
             'Development Status :: 4 - Beta',
