@@ -32,7 +32,7 @@ def main():
     cve_parser = subparsers.add_parser('cve')
     cve_parser.set_defaults(which='cve')
 
-    cve_parser.add_argument('--name',
+    cve_parser.add_argument('--names',
                             required=False,
                             nargs='+',
                             help='The name of the CVE source.')
@@ -49,6 +49,9 @@ def main():
     host_assess_subparser.set_defaults(sub_which='assess')
 
     ## Assessor parser
+    assess_group = host_assess_subparser.add_mutually_exclusive_group()
+    assess_group.add_argument('--yum', action='store_const', dest='type', const='yum', default='yum')
+    assess_group.add_argument('--rpm', action='store_const', dest='type', const='rpm')
     host_assess_subparser.add_argument('--curation',
                                required=True,
                                help='Location of curation data.')

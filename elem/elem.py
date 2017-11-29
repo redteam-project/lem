@@ -3,6 +3,7 @@ import log
 import sys
 from vulnerability import VulnerabilityManager
 from host import YumAssessor
+from host import RpmAssessor
 from host import Patcher
 from score import ScoreManager
 from exploit import CurationManager
@@ -54,7 +55,15 @@ class Elem(object):
         self.configure_vulnerability_sources()
         for name, source in self.vuln_manager.readers.iteritems():
             if self.args.names and name in self.args.names:
-                pass
+                if self.args.update:
+                    source.update_cves()
+                else:
+                    self.console_logger.info(str(source))
+            else:
+                if self.args.update:
+                    source.update_cves()
+                else:
+                    self.console_logger.info(str(source))
 
     def process_host(self):
         try:
@@ -73,15 +82,19 @@ class Elem(object):
 
     def process_assess(self):
         curation_manager = CurationManager(self.args.curation)
-
-        assessor = YumAssessor()
+        self.configure_vulnerability_sources()
+        if self.args.type == 'yum':
+            assessor = YumAssessor()
+        elif self.args.type == 'rpm':
+            cves, _ = self.vuln_manager.list_cves()
+            assessor = RpmAssessor(cves)
         assessor.assess()
         self.console_logger.info(curation_manager.csv(cves=assessor.cves,
                                                       source=self.args.source,
                                                       score_kind=self.args.kind,
                                                       score_regex=self.args.score,
                                                       eid=self.args.id))
-
+                                                      
     def process_patch(self):
         if self.args.sub_sub_which == 'exploits':
             curation_manager = CurationManager(self.args.curation)
