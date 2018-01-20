@@ -1,11 +1,10 @@
 import unittest
-import os
 from elem.score import Score
 from elem.score import InvalidExample
 
 class TestStrideScore(unittest.TestCase):
     def setUp(self):
-        self.pattern = '^(\d)(\d)(\d)(\d)(\d)(\d)$'
+        self.pattern = r'^(\d)(\d)(\d)(\d)(\d)(\d)$'
         self.stride = Score('stride', self.pattern)
 
     def test_name(self):
@@ -28,7 +27,7 @@ class TestStrideScore(unittest.TestCase):
 
 class TestSkippedScore(unittest.TestCase):
     def setUp(self):
-        self.pattern = '^(19|20)(\d\d)[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$|^(19|20)(\d\d)(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])$'
+        self.pattern = r'^(19|20)(\d\d)[- /.](0[1-9]|1[012])[- /.](0[1-9]|[12][0-9]|3[01])$|^(19|20)(\d\d)(0[1-9]|1[012])(0[1-9]|[12][0-9]|3[01])$'
         self.skipped = Score('skipped', self.pattern)
 
     def test_name(self):

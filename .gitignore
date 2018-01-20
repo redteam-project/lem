@@ -5,3 +5,4 @@ dist/
 elem.egg-info/
 *.backup
 .eggs/
+.vscode/
