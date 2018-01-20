@@ -1,12 +1,13 @@
 import os
-import log
 import sys
-from vulnerability import VulnerabilityManager
-from host import YumAssessor
-from host import RpmAssessor
-from host import Patcher
-from score import ScoreManager
-from exploit import CurationManager
+from redteamcore import FRTLogger
+
+from elem.vulnerability import VulnerabilityManager
+from elem.host import YumAssessor
+from elem.host import RpmAssessor
+from elem.host import Patcher
+from elem.score import ScoreManager
+from elem.exploit import CurationManager
 
 from . import ElemConfiguration
 
@@ -16,10 +17,9 @@ class Elem(object):
         self.elem_conf = ElemConfiguration()
         self.config = self.elem_conf.read_config()
 
-        self.logger = log.setup_custom_logger('elem')
-        self.console_logger = log.setup_console_logger('console')
         self.vuln_manager = None
         self.score_manager = None
+        FRTLogger.set_logging_level('info')
 
     def configure_vulnerability_sources(self):
         self.vuln_manager = VulnerabilityManager()
@@ -58,12 +58,12 @@ class Elem(object):
                 if self.args.update:
                     source.update_cves()
                 else:
-                    self.console_logger.info(str(source))
+                    FRTLogger.info(str(source))
             else:
                 if self.args.update:
                     source.update_cves()
                 else:
-                    self.console_logger.info(str(source))
+                    FRTLogger.info(str(source))
 
     def process_host(self):
         try:
@@ -73,10 +73,10 @@ class Elem(object):
                 self.process_patch()
         except OSError as oserror:
             if oserror.errno == 2:
-                self.console_logger.error("\nUnable to execute %s.  The patch or assess subcommands may only "
+                FRTLogger.error("\nUnable to execute %s.  The patch or assess subcommands may only "
                                           "be run on an enterprise Linux host.", self.args.sub_which)
             elif oserror.errno == 1:
-                self.console_logger.error("\nUnable to execute %s.  Please ensure you have the permissions to do so.", self.args.sub_which)
+                FRTLogger.error("\nUnable to execute %s.  Please ensure you have the permissions to do so.", self.args.sub_which)
             else:
                 raise OSError(oserror.args)
 
@@ -89,11 +89,15 @@ class Elem(object):
             cves, _ = self.vuln_manager.list_cves()
             assessor = RpmAssessor(cves)
         assessor.assess()
-        self.console_logger.info(curation_manager.csv(cves=assessor.cves,
-                                                      source=self.args.source,
-                                                      score_kind=self.args.kind,
-                                                      score_regex=self.args.score,
-                                                      eid=self.args.id))
+        output = curation_manager.csv(cves=assessor.cves,
+                                      source=self.args.source,
+                                      score_kind=self.args.kind,
+                                      score_regex=self.args.score,
+                                      eid=self.args.id)
+        FRTLogger.info(output)
+        if self.args.save_file:
+            self.args.save_file.write(output)
+            self.args.save_file.close()
                                                       
     def process_patch(self):
         if self.args.sub_sub_which == 'exploits':
@@ -107,7 +111,7 @@ class Elem(object):
     def process_score(self):
         self.configure_score_managers()
         if 'list' in self.args.sub_which:
-            self.console_logger.info(str(self.score_manager))
+            FRTLogger.info(str(self.score_manager))
 
     def process_exploit(self):
         curation_manager = CurationManager(self.args.curation)
@@ -117,37 +121,37 @@ class Elem(object):
                                              all_exploits=self.args.all)
 
         elif 'list' in self.args.sub_which:
-            self.console_logger.info(curation_manager.csv(source=self.args.source,
-                                                          cves=self.args.cves,
-                                                          cpes=self.args.cpes,
-                                                          score_kind=self.args.kind,
-                                                          eid=self.args.id,
-                                                          score_regex=self.args.score))
+            FRTLogger.info(curation_manager.csv(source=self.args.source,
+                                                cves=self.args.cves,
+                                                cpes=self.args.cpes,
+                                                score_kind=self.args.kind,
+                                                eid=self.args.id,
+                                                score_regex=self.args.score))
 
         elif 'score' in self.args.sub_which:
             self.configure_score_managers()
             if not self.args.kind in self.score_manager.scores.keys():
-                self.console_logger.error("Score kind {0} is not valid.  Please check {1}".format(self.args.kind, self.elem_conf.path))
+                FRTLogger.error("Score kind {0} is not valid.  Please check {1}".format(self.args.kind, self.elem_conf.path))
                 sys.exit(1)
             if not self.score_manager.is_valid(self.args.kind, self.args.value):
-                self.console_logger.error("Score value {0} is not valid.  Please check {1}".format(self.args.value, self.elem_conf.path))
+                FRTLogger.error("Score value {0} is not valid.  Please check {1}".format(self.args.value, self.elem_conf.path))
                 sys.exit(1)
 
-            curation_manager.score(eid=self.args.id, 
-                                   source=self.args.source, 
-                                   cpe=self.args.cpe, 
-                                   kind=self.args.kind, 
+            curation_manager.score(eid=self.args.id,
+                                   source=self.args.source,
+                                   cpe=self.args.cpe,
+                                   kind=self.args.kind,
                                    value=self.args.value)
 
         elif 'configure' in self.args.sub_which:
             if not self.args.command and not self.args.packages and not self.args.services and not self.args.selinux:
-                self.console_logger.error("At least one of the following must"
-                                        "be specified for staging: command, "
-                                        "packages, services, selinux")
+                FRTLogger.error("At least one of the following must"
+                                "be specified for staging: command, "
+                                "packages, services, selinux")
                 sys.exit(1)
 
-            curation_manager.set_stage(eid=self.args.id, 
-                                       source=self.args.source, 
+            curation_manager.set_stage(eid=self.args.id,
+                                       source=self.args.source,
                                        cpe=self.args.cpe,
                                        command=self.args.command,
                                        selinux=self.args.selinux,
@@ -156,8 +160,8 @@ class Elem(object):
                                        filename=self.args.filename)
 
         elif 'copy' in self.args.sub_which:
-            curation_manager.copy(eid=self.args.id, 
-                                  source=self.args.source, 
+            curation_manager.copy(eid=self.args.id,
+                                  source=self.args.source,
                                   cpe=self.args.cpe,
                                   destination=self.args.destination,
                                   stage=self.args.stage)

@@ -4,7 +4,6 @@ import os
 import sys
 import argparse
 sys.path.append("../")
-from elem import vulnerability
 from elem import Elem
 
 def read_cpe():
@@ -53,24 +52,30 @@ def main():
     assess_group.add_argument('--yum', action='store_const', dest='type', const='yum', default='yum')
     assess_group.add_argument('--rpm', action='store_const', dest='type', const='rpm')
     host_assess_subparser.add_argument('--curation',
-                               required=True,
-                               help='Location of curation data.')
+                                       required=True,
+                                       help='Location of curation data.')
     host_assess_subparser.add_argument('--source',
-                               required=False,
-                               default=None,
-                               help='Filter by exploit source.')
+                                       required=False,
+                                       default=None,
+                                       help='Filter by exploit source.')
     host_assess_subparser.add_argument('--kind',
-                               required=False,
-                               default=None,
-                               help='Filter by score kind.')
+                                       required=False,
+                                       default=None,
+                                       help='Filter by score kind.')
     host_assess_subparser.add_argument('--score',
-                               required=False,
-                               default=None,
-                               help='A regex by which to filter the score.')
+                                       required=False,
+                                       default=None,
+                                       help='A regex by which to filter the score.')
     host_assess_subparser.add_argument('--id',
-                               required=False,
-                               default=None,
-                               help='Filter by exploit ID.')
+                                       required=False,
+                                       default=None,
+                                       help='Filter by exploit ID.')
+    host_assess_subparser.add_argument('--save-file',
+                                       type=argparse.FileType('w'),
+                                       required=False,
+                                       default=None,
+                                       help='A file in which to store the output.')
+    
 
     ## Host Patch Parser
     host_patch_subparser = host_subparsers.add_parser('patch')

@@ -2,8 +2,9 @@ from distutils.core import setup
 from distutils.core import Command
 import os
 import sys
-import setuptools
 import unittest
+import setuptools
+
 
 class CleanPycCommand(Command):
     user_options = []
@@ -34,22 +35,22 @@ else:
 
 
 setup(name='elem',
-      packages=['elem', 'elem.core', 'elem.host', 'elem.score', 'elem.vulnerability', 'elem.exploit'],
+      packages=['elem', 'elem.host', 'elem.score', 'elem.vulnerability', 'elem.exploit'],
       package_data={'elem': ['config/elem.conf']},
-      install_requires=['requests', 'python-dateutil', 'argparse', 'cpe'],
+      install_requires=['requests', 'python-dateutil', 'argparse', 'cpe', 'redteamcore'],
       data_files=[(path, ['elem/config/elem.conf'])],
-      version='0.2.3',
+      version='0.3.0',
       description='Tool to correlate published CVE\'s against Enterprise Linux against known exploits.',
       author='Kenneth Evensen',
       author_email='kevensen@redhat.com',
       license='GPLv3',
       url='https://github.com/fedoraredteam/elem',
-      download_url='https://github.com/fedoraredteam/elem/archive/0.2.3.tar.gz',
+      download_url='https://github.com/fedoraredteam/elem/archive/0.3.0.tar.gz',
       keywords=['cve', 'exploit', 'linux'],
       classifiers=[
-            'Development Status :: 4 - Beta',
-            'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
-            'Programming Language :: Python :: 2.7',
+          'Development Status :: 4 - Beta',
+          'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+          'Programming Language :: Python :: 2.7',
       ],
       scripts=['bin/elem'],
       platforms=['Linux'],
