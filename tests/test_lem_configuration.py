@@ -1,6 +1,6 @@
 import unittest
 import os
-from elem import ElemConfiguration
+from lem import ElemConfiguration
 
 class TestElemConfiguration(unittest.TestCase):
 
