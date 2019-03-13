@@ -2,7 +2,7 @@ import unittest
 import os
 import mock
 
-from elem.host import YumAssessor
+from lem.host import YumAssessor
 
 
 class TestYumAssessor(unittest.TestCase):
