@@ -29,30 +29,30 @@ ELEM_CONF_ENV = 'ELEMCONFPATH'
 if os.getenv(ELEM_CONF_ENV):
     path = os.getenv(ELEM_CONF_ENV)
 elif hasattr(sys, 'real_prefix'):
-    path = os.path.join(sys.prefix, '.elem')
+    path = os.path.join(sys.prefix, '.lem')
 else:
-    path = os.path.join(os.path.expanduser("~"), '.elem')
+    path = os.path.join(os.path.expanduser("~"), '.lem')
 
 
-setup(name='elem',
-      packages=['elem', 'elem.host', 'elem.score', 'elem.vulnerability', 'elem.exploit'],
-      package_data={'elem': ['config/elem.conf']},
+setup(name='lem',
+      packages=['lem', 'lem.host', 'lem.score', 'lem.vulnerability', 'lem.exploit'],
+      package_data={'lem': ['config/lem.conf']},
       install_requires=['requests', 'python-dateutil', 'argparse', 'cpe', 'redteamcore'],
-      data_files=[(path, ['elem/config/elem.conf'])],
+      data_files=[(path, ['lem/config/lem.conf'])],
       version='0.3.0',
-      description='Tool to correlate published CVE\'s against Enterprise Linux against known exploits.',
+      description='Tool to correlate published CVE\'s against Linux known exploits.',
       author='Kenneth Evensen',
-      author_email='kevensen@redhat.com',
+      author_email='kdevensen@google.com',
       license='GPLv3',
-      url='https://github.com/fedoraredteam/elem',
-      download_url='https://github.com/fedoraredteam/elem/archive/0.3.0.tar.gz',
+      url='https://github.com/redteam-project/lem',
+      download_url='https://github.com/redteam-project/lem/archive/0.3.0.tar.gz',
       keywords=['cve', 'exploit', 'linux'],
       classifiers=[
           'Development Status :: 4 - Beta',
           'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
           'Programming Language :: Python :: 2.7',
       ],
-      scripts=['bin/elem'],
+      scripts=['bin/lem'],
       platforms=['Linux'],
       test_suite='tests',
       cmdclass={'tidy': CleanPycCommand})
