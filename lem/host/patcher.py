@@ -5,7 +5,7 @@ class Patcher(object):
     #    self.
     @classmethod
     def patch(cls, cves=None):
-        #logger = logging.getLogger('elem')
+        #logger = logging.getLogger('lem')
         if cves is not None:
             cves = ",".join(cves).encode('utf-8')
             command = ["yum", "update", '-y', "--cves", cves]
@@ -24,4 +24,3 @@ class Patcher(object):
             raise OSError(p.returncode, err)
 
         #logger.debug("Patch Successful: %s", out)
-
