@@ -1,4 +1,4 @@
-from elem.score import Score
+from lem.score import Score
 
 class ScoreManager(object):
     def __init__(self):

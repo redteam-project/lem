@@ -29,4 +29,3 @@ class Score(object):
         score_dict = dict()
         score_dict[self.name] = dict(pattern=self.pattern, example=self.example or '')
         return iter(score_dict)
-
