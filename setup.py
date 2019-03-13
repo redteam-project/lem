@@ -25,9 +25,9 @@ class CleanPycCommand(Command):
         for filename in filenames:
             os.remove(filename)
 
-ELEM_CONF_ENV = 'ELEMCONFPATH'
-if os.getenv(ELEM_CONF_ENV):
-    path = os.getenv(ELEM_CONF_ENV)
+LEM_CONF_ENV = 'LEMCONFPATH'
+if os.getenv(LEM_CONF_ENV):
+    path = os.getenv(LEM_CONF_ENV)
 elif hasattr(sys, 'real_prefix'):
     path = os.path.join(sys.prefix, '.lem')
 else:
