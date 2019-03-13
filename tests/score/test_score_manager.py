@@ -1,6 +1,6 @@
 import unittest
-from elem.score import ScoreManager
-from elem.score import InvalidExample
+from lem.score import ScoreManager
+from lem.score import InvalidExample
 
 class TestScoreManager(unittest.TestCase):
     def setUp(self):
