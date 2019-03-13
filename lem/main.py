@@ -2,20 +2,20 @@ import os
 import sys
 from redteamcore import FRTLogger
 
-from elem.vulnerability import VulnerabilityManager
-from elem.host import YumAssessor
-from elem.host import RpmAssessor
-from elem.host import Patcher
-from elem.score import ScoreManager
-from elem.exploit import CurationManager
+from lem.vulnerability import VulnerabilityManager
+from lem.host import YumAssessor
+from lem.host import RpmAssessor
+from lem.host import Patcher
+from lem.score import ScoreManager
+from lem.exploit import CurationManager
 
 from . import ElemConfiguration
 
 class Elem(object):
     def __init__(self, args):
         self.args = args
-        self.elem_conf = ElemConfiguration()
-        self.config = self.elem_conf.read_config()
+        self.lem_conf = ElemConfiguration()
+        self.config = self.lem_conf.read_config()
 
         self.vuln_manager = None
         self.score_manager = None
@@ -30,7 +30,7 @@ class Elem(object):
                 self.vuln_manager.add_api_source(section_pieces[1],
                                                  self.config.get(section, 'location'),
                                                  not self.args.notlsverify,
-                                                 os.path.join(self.elem_conf.path, self.config.get(section, 'cache_path')))
+                                                 os.path.join(self.lem_conf.path, self.config.get(section, 'cache_path')))
 
     def configure_score_managers(self):
         self.score_manager = ScoreManager()
@@ -98,7 +98,7 @@ class Elem(object):
         if self.args.save_file:
             self.args.save_file.write(output)
             self.args.save_file.close()
-                                                      
+
     def process_patch(self):
         if self.args.sub_sub_which == 'exploits':
             curation_manager = CurationManager(self.args.curation)
@@ -131,10 +131,10 @@ class Elem(object):
         elif 'score' in self.args.sub_which:
             self.configure_score_managers()
             if not self.args.kind in self.score_manager.scores.keys():
-                FRTLogger.error("Score kind {0} is not valid.  Please check {1}".format(self.args.kind, self.elem_conf.path))
+                FRTLogger.error("Score kind {0} is not valid.  Please check {1}".format(self.args.kind, self.lem_conf.path))
                 sys.exit(1)
             if not self.score_manager.is_valid(self.args.kind, self.args.value):
-                FRTLogger.error("Score value {0} is not valid.  Please check {1}".format(self.args.value, self.elem_conf.path))
+                FRTLogger.error("Score value {0} is not valid.  Please check {1}".format(self.args.value, self.lem_conf.path))
                 sys.exit(1)
 
             curation_manager.score(eid=self.args.id,
