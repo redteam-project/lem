@@ -2,7 +2,7 @@
 .DS_Store
 build/
 dist/
-elem.egg-info/
+lem.egg-info/
 *.backup
 .eggs/
 .vscode/
