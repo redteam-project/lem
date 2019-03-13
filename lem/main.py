@@ -9,12 +9,12 @@ from lem.host import Patcher
 from lem.score import ScoreManager
 from lem.exploit import CurationManager
 
-from . import ElemConfiguration
+from . import LemConfiguration
 
-class Elem(object):
+class Lem(object):
     def __init__(self, args):
         self.args = args
-        self.lem_conf = ElemConfiguration()
+        self.lem_conf = LemConfiguration()
         self.config = self.lem_conf.read_config()
 
         self.vuln_manager = None
