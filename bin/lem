@@ -4,7 +4,7 @@ import os
 import sys
 import argparse
 sys.path.append("../")
-from elem import Elem
+from lem import Lem
 
 def read_cpe():
     file_name = '/etc/system-release-cpe'
@@ -40,7 +40,7 @@ def main():
                             action='store_true',
                             help='Update data from CVE source.')
 
-    # Host Parser                        
+    # Host Parser
     host_parser = subparsers.add_parser('host')
     host_parser.set_defaults(which='host')
     host_subparsers = host_parser.add_subparsers()
@@ -75,7 +75,7 @@ def main():
                                        required=False,
                                        default=None,
                                        help='A file in which to store the output.')
-    
+
 
     ## Host Patch Parser
     host_patch_subparser = host_subparsers.add_parser('patch')
@@ -91,7 +91,7 @@ def main():
     host_patch_exploit_subparser.add_argument('--source',
                                               required=True,
                                               help='Exploit source.')
-   
+
     host_patch_exploit_subparser.add_argument('--ids',
                                               default=None,
                                               nargs='*',
@@ -110,8 +110,8 @@ def main():
     # Exploit Parser
     exploit_parser = subparsers.add_parser('exploit')
     exploit_parser.set_defaults(which='exploit')
-    
-    
+
+
 
     exploit_subparsers = exploit_parser.add_subparsers()
     exploit_list_parser = exploit_subparsers.add_parser('list')
@@ -223,7 +223,7 @@ def main():
     exploit_configure_parser.add_argument('--filename',
                                           required=True,
                                           help='Name of the destination file.  Paths will be stripped.  Used for copying.')
-    
+
     exploit_copy_parser = exploit_subparsers.add_parser('copy')
     exploit_copy_parser.set_defaults(sub_which='copy')
     exploit_copy_parser.add_argument('--id',
@@ -247,14 +247,14 @@ def main():
     exploit_copy_parser.add_argument('--curation',
                                      required=True,
                                      help='Location of curation data.')
-    
 
-    
 
-    
+
+
+
     args = parser.parse_args()
-    elem = Elem(args)
-    elem.run()
+    lem = Lem(args)
+    lem.run()
 
 
 if __name__ == "__main__":
