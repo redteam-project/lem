@@ -1,6 +1,6 @@
 import unittest
-from elem.score import Score
-from elem.score import InvalidExample
+from lem.score import Score
+from lem.score import InvalidExample
 
 class TestStrideScore(unittest.TestCase):
     def setUp(self):
@@ -41,4 +41,3 @@ class TestSkippedScore(unittest.TestCase):
         self.assertFalse(self.skipped.is_valid("2017-10-32"))
         self.assertFalse(self.skipped.is_valid('ABCDEF'))
         self.assertFalse(self.skipped.is_valid(''))
-        
