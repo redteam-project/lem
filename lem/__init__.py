@@ -1,3 +1,3 @@
 __author__ = 'k6n'
-from elem.configuration import ElemConfiguration
-from elem.main import Elem
+from lem.configuration import LemConfiguration
+from lem.main import Lem
