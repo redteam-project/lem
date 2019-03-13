@@ -2,9 +2,9 @@
 README.md
 setup.cfg
 setup.py
-bin/elem
-elem/__init__.py
-elem/cve_test.py
-elem/elem.py
-elem/elem_configuration.py
-elem/log.py
+bin/lem
+lem/__init__.py
+lem/cve_test.py
+lem/lem.py
+lem/lem_configuration.py
+lem/log.py
