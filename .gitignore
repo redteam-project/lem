@@ -6,3 +6,5 @@ lem.egg-info/
 *.backup
 .eggs/
 .vscode/
+.idea/
+venv/
