@@ -2,6 +2,7 @@ import unittest
 import os
 from lem import LemConfiguration
 
+
 class TestLemConfiguration(unittest.TestCase):
 
     def setUp(self):
@@ -14,6 +15,7 @@ class TestLemConfiguration(unittest.TestCase):
     def tearDown(self):
         os.remove(self.config.file)
         os.rmdir(self.config.path)
+
 
 if __name__ == '__main__':
     unittest.main()

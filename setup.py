@@ -25,6 +25,7 @@ class CleanPycCommand(Command):
         for filename in filenames:
             os.remove(filename)
 
+
 LEM_CONF_ENV = 'LEMCONFPATH'
 if os.getenv(LEM_CONF_ENV):
     path = os.getenv(LEM_CONF_ENV)
@@ -39,13 +40,13 @@ setup(name='lem',
       package_data={'lem': ['config/lem.conf']},
       install_requires=['requests', 'python-dateutil', 'argparse', 'cpe', 'redteamcore'],
       data_files=[(path, ['lem/config/lem.conf'])],
-      version='0.3.0',
+      version='0.3.1',
       description='Tool to correlate published CVE\'s against Linux known exploits.',
       author='Kenneth Evensen',
       author_email='kdevensen@google.com',
       license='GPLv3',
       url='https://github.com/redteam-project/lem',
-      download_url='https://github.com/redteam-project/lem/archive/0.3.0.tar.gz',
+      download_url='https://github.com/redteam-project/lem/archive/0.3.1.tar.gz',
       keywords=['cve', 'exploit', 'linux'],
       classifiers=[
           'Development Status :: 4 - Beta',
