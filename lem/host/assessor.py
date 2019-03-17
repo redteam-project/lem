@@ -1,13 +1,21 @@
+import abc
 import subprocess
+import sys
 import re
+from redteamcore import FRTLogger
 from cpe import CPE
-import platform
+
+
+RE_CVE = re.compile(r'CVE-\d{4}-\d{4,}')
+
 
 class Assessor(object):
     def __init__(self):
         self.cves = []
+    @abc.abstractmethod
     def assess(self):
         pass
+
 
 class YumAssessor(Assessor):
     def __init__(self):
@@ -35,6 +43,7 @@ class YumAssessor(Assessor):
                 self.cves.append(result[0])
 
         self.cves = list(set(self.cves))
+
 
 class RpmAssessor(Assessor):
     def __init__(self, vuln_data):
@@ -198,4 +207,39 @@ class Rpm(object):
     #     pass
 
 
+class PacmanAssessor(Assessor):
+    def __init__(self):
+        super(PacmanAssessor, self).__init__()
 
+    def assess(self):
+        lines = []
+        # check dependencies
+        has_audit_command = ["/usr/bin/pacman", "-Qi", "arch-audit"]
+        p = subprocess.Popen(has_audit_command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        p.communicate()
+        if p.returncode == 1:
+            _msg = "The optional argument --pacman requires arch-audit to be installed. Please install and try again."
+            FRTLogger.error(_msg)
+            sys.exit(1)
+        # find CVEs
+        command = ["arch-audit", "-f", "'%n %c'"]
+        p = subprocess.Popen(command,
+                             stdout=subprocess.PIPE,
+                             stderr=subprocess.PIPE)
+        out, err = p.communicate()
+
+        if p.returncode != 0:
+            raise OSError((p.returncode, err))
+
+        lines = out.split('\n')
+
+        # assume that each line of output has the format "libtiff CVE-2019-7663,CVE-2019-6128"
+        for line in lines:
+            if not line:
+                continue
+            pkgname, cves = line.replace("'", "").split(" ")
+            cves = RE_CVE.findall(cves)
+            if not cves:
+                continue
+            self.cves.extend(cves)
+        self.cves = list(set(self.cves))

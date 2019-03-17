@@ -5,6 +5,7 @@ from redteamcore import FRTLogger
 from lem.vulnerability import VulnerabilityManager
 from lem.host import YumAssessor
 from lem.host import RpmAssessor
+from lem.host import PacmanAssessor
 from lem.host import Patcher
 from lem.score import ScoreManager
 from lem.exploit import CurationManager
@@ -88,13 +89,17 @@ class Lem(object):
         elif self.args.type == 'rpm':
             cves, _ = self.vuln_manager.list_cves()
             assessor = RpmAssessor(cves)
+        elif self.args.type == 'pacman':
+            assessor = PacmanAssessor()
         assessor.assess()
+        FRTLogger.info("Discovered CVEs: {}".format(",".join(assessor.cves)))
+
         output = curation_manager.csv(cves=assessor.cves,
                                       source=self.args.source,
                                       score_kind=self.args.kind,
                                       score_regex=self.args.score,
                                       eid=self.args.id)
-        FRTLogger.info(output)
+        FRTLogger.info("Curated CSV:{}".format(output if output else " Empty"))
         if self.args.save_file:
             self.args.save_file.write(output)
             self.args.save_file.close()

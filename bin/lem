@@ -51,6 +51,7 @@ def main():
     assess_group = host_assess_subparser.add_mutually_exclusive_group()
     assess_group.add_argument('--yum', action='store_const', dest='type', const='yum', default='yum')
     assess_group.add_argument('--rpm', action='store_const', dest='type', const='rpm')
+    assess_group.add_argument('--pacman', action='store_const', dest='type', const='pacman')
     host_assess_subparser.add_argument('--curation',
                                        required=True,
                                        help='Location of curation data.')
