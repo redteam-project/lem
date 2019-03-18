@@ -1,4 +1,4 @@
-# Arch Linux Unit Tests
+# Arch Linux Tests
 
 You can use a [Vagrant](https://www.vagrantup.com/intro/getting-started/) box to test lem on Arch Linux.
 
@@ -33,7 +33,15 @@ If you want to execute the local version of lem, you can build it and pip instal
 ```
 (venv) [vagrant@archlinux lem]$ python setup.py sdist
 (venv) [vagrant@archlinux lem]$ pip install ./dist/lem-0.3.2.tar.gz
-(venv) [vagrant@archlinux lem]$ sudo pacman -S git arch-audit
+(venv) [vagrant@archlinux lem]$ sudo pacman -S git arch-audit svn binutils patch gcc make fakeroot
 (venv) [vagrant@archlinux lem]$ git clone https://github.com/redteam-project/exploit-curation
+(venv) [vagrant@archlinux lem]$ svn checkout --depth=empty svn:// svn.archlinux.org/packages
+(venv) [vagrant@archlinux packages]$ cd packages
+(venv) [vagrant@archlinux packages]$ svn update bash
+(venv) [vagrant@archlinux bash]$ cd bash
+(venv) [vagrant@archlinux bash]$ svn up -r213615 ./
+(venv) [vagrant@archlinux bash]$ makepkg -s --skipinteg --skipcheck
+(venv) [vagrant@archlinux bash]$ sudo pacman -U bash-4.3.011-1-x86_64.pkg.tar.xz
+(venv) [vagrant@archlinux bash]$ cd ~/lem
 (venv) [vagrant@archlinux lem]$ lem host assess --pacman --curation exploit-curation
 ```
