@@ -8,3 +8,4 @@ lem.egg-info/
 .vscode/
 .idea/
 venv/
+.vagrant/
