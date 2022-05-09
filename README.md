@@ -1,4 +1,7 @@
 # LEM
+
+**Note that as of May 2022 this project is no longer active.**
+
 Welcome to the Linux Exploit Mapper.  The purpose of the **lem** tool is to assist with assessments known exploits on a Linux host.  Initially the [STRIDE](https://msdn.microsoft.com/en-us/library/ee823878%28v=cs.20%29.aspx) threat scoring model will be used though this tool is designed to support additional models.
 
 ## Requirements
